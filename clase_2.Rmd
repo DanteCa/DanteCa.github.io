@@ -1,0 +1,76 @@
+---
+title: "R Aplicado a la Meteorologia - Basico"
+subtitle: "Clase 2 - Manejo de tablas"
+author: "Dante Castro Garro"
+date: "2019-06-01"
+output: 
+  xaringan::moon_reader:
+  lib_dir: libs
+  nature:
+    countIncrementalSlides: false
+---
+
+```{r setup, include = FALSE}
+options(htmltools.dir.version = FALSE)
+```
+
+# Ambiente de trabajo
+
+R siempre trabaja en una carpeta. Por defecto, suele ser `"C:/Users/usuario/Documents/"`
+
+¿Pero como podemos estar seguros?
+
+--
+
+El comando `getwd()` nos indicara la carpeta donde estamo trabajando.
+
+```{r, evals = TRUE}
+getwd()
+```
+
+---
+
+# ¿Cómo lo cambiamos?
+
+Podemos utilizar el comando `setwd()`, donde deberemos colocar la ruta de la carpeta a la que deseamos cambiar.
+
+`setwd("D:/Datos")`
+
+--
+
+Hay que tener cuidado en la forma en cómo escribimos la ruta. No es lo mismo usar `"/"` a usar `"\"`.
+
+--
+
+- `setwd("D:\Datos")` forma incorrecta.
+
+- `setwd("D:/Datos")` forma correcta. 
+
+--
+
+- `setwd("D:\\Datos")` también es correcto. 
+
+---
+
+# ¿Y cómo chequeamos el contenido de la carpeta de trabajo?"
+
+Eso puede hacerse con el comando `list.files()`
+
+```{r}
+list.files()
+```
+
+Esto lo utilizaremos más adelante, 
+
+.large[no lo olviden!]
+
+---
+
+class: inverse, center, middle
+
+# Ahora si continuemos donde nos quedamos la semana pasada.
+
+---
+
+# Estructura de datos
+## Dimensiones
