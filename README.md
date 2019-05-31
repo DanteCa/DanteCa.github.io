@@ -1,5 +1,7 @@
-# danteca.github.io
+# Dante Castro
 
-## Aerrr
+# Cursos
 
-Aun no entiendo que pasa
+## R básico aplicado a la meteorologí
+
+* [Clase 2](clase_2.html)
