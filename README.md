@@ -1,5 +1,4 @@
-# danteca.github.io
-
+# Dante Castro
 # Cursos
 
 ## R básico aplicado a la meteorologí
