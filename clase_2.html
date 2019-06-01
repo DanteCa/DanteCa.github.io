@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
   <head>
-    <title>R Aplicado a la Meteorologia - Basico</title>
+    <title>R Aplicado a la Meteorología - Básico</title>
     <meta charset="utf-8" />
     <meta name="author" content="Dante Castro Garro" />
     <meta name="date" content="2019-06-01" />
@@ -12,7 +12,7 @@
     <textarea id="source">
 class: center, middle, inverse, title-slide
 
-# R Aplicado a la Meteorologia - Basico
+# R Aplicado a la Meteorología - Básico
 ## Clase 2 - Manejo de tablas
 ### Dante Castro Garro
 ### 2019-06-01
@@ -26,11 +26,11 @@ class: center, middle, inverse, title-slide
 
 R siempre trabaja en una carpeta. Por defecto, suele ser `"C:/Users/usuario/Documents/"`
 
-¿Pero como podemos estar seguros?
+¿Pero cómo podemos estar seguros?
 
 --
 
-El comando `getwd()` nos indicara la carpeta donde estamo trabajando.
+El comando `getwd()` nos indicará la carpeta donde estamos trabajando.
 
 
 ```r
@@ -47,7 +47,10 @@ getwd()
 
 Podemos utilizar el comando `setwd()`, donde deberemos colocar la ruta de la carpeta a la que deseamos cambiar.
 
-`setwd("D:/Datos")`
+
+```r
+setwd("D:/Datos")
+```
 
 --
 
@@ -65,7 +68,7 @@ Hay que tener cuidado en la forma en cómo escribimos la ruta. No es lo mismo us
 
 ---
 
-# ¿Y cómo chequeamos el contenido de la carpeta de trabajo?"
+# ¿Y cómo chequeamos el contenido de la carpeta de trabajo?
 
 Eso puede hacerse con el comando `list.files()`
 
@@ -75,7 +78,8 @@ list.files()
 ```
 
 ```
-## [1] "clase_2.html"  "clase_2.Rmd"   "clase_2_files"
+## [1] "clase_2.html"  "clase_2.Rmd"   "clase_2_files" "Datos"        
+## [5] "Datos.rar"
 ```
 
 Esto lo utilizaremos más adelante, 
@@ -86,12 +90,1051 @@ Esto lo utilizaremos más adelante,
 
 class: inverse, center, middle
 
-# Ahora si continuemos donde nos quedamos la semana pasada.
+### Ahora si continuemos donde nos quedamos la semana pasada.
+# Tipos de objetos
 
 ---
 
+### Tipos de objetos
+
+Enteros `[integer]`
+
+
+```r
+i = 1:10
+```
+
+--
+
+Reales `[numeric]`
+
+
+```r
+j = c(1.1, 2.2, 3.3)
+```
+
+--
+
+Lógicos `[logical]`
+
+
+```r
+k = c(T, F, T, F)
+```
+
+--
+
+Caracteres `[character]`
+
+
+```r
+l = c("Ya", "perdiste pe", "varón", "suelta el billete noma")
+```
+
+--
+
+Complejos `[complex]`
+
+
+```r
+m = 4+3i
+```
+
+---
+
+class: inverse, center, middle
+
 # Estructura de datos
+
+---
+
+### Estructura de datos
+
+- Vectores
+
+- Listas
+
+- Matrices
+
+- Data frames
+
+- Factores 
+
+--
+
+Y otros más que les harán la vida imposible... 
+--
+como tu ex 
+
+&lt;img src="https://i.kym-cdn.com/photos/images/newsfeed/001/384/531/8ed.jpg" width="40%" /&gt;
+
+---
+
 ## Dimensiones
+### 1-D
+
+Son los llamados `vectores`.
+
+
+```r
+x = c(1,2,4,5,67,87,98,9,342)
+x
+```
+
+```
+## [1]   1   2   4   5  67  87  98   9 342
+```
+
+---
+
+## Dimensiones
+### 2-D
+
+Son las llamadas `matrices`
+
+```r
+y = matrix(1:9, nrow = 3, ncol = 3)
+y
+```
+
+```
+##      [,1] [,2] [,3]
+## [1,]    1    4    7
+## [2,]    2    5    8
+## [3,]    3    6    9
+```
+---
+
+## Dimensiones
+### 2-D
+
+Los `data.frame` también están incluídos
+
+```r
+head(airquality)
+```
+
+```
+##   Ozone Solar.R Wind Temp Month Day
+## 1    41     190  7.4   67     5   1
+## 2    36     118  8.0   72     5   2
+## 3    12     149 12.6   74     5   3
+## 4    18     313 11.5   62     5   4
+## 5    NA      NA 14.3   56     5   5
+## 6    28      NA 14.9   66     5   6
+```
+
+---
+
+## Dimensiones
+### 3-D (o más D's)
+
+Son conocidos como `arrays`. 
+
+Técnicamente, las `matrices` son `arrays` de 2-D
+
+
+```r
+z = array(1:8, c(2,2,2))
+z
+```
+
+```
+## , , 1
+## 
+##      [,1] [,2]
+## [1,]    1    3
+## [2,]    2    4
+## 
+## , , 2
+## 
+##      [,1] [,2]
+## [1,]    5    7
+## [2,]    6    8
+```
+---
+
+class: inverse, center, middle
+
+# Selección de datos
+
+### Vamos a enfocarnos en el data frame `airquality`
+
+---
+
+### Selección de datos
+
+Se utilizan los corchetes `[a,b]` para hacer la selección.
+
+- El valor de `"a"` indicarán las filas a seleccionar, mientras que el valor de `"b"` será para los columnas.
+
+--
+
+Selección de la 4ta fila y 2da columna.
+
+
+```r
+airquality[4,2]
+```
+
+```
+## [1] 313
+```
+
+--
+
+Se puede seleccionar más de una fila o columna al mismo tiempo, o seleccionar todas las filas y columnas si no se asigna un valor
+
+
+```r
+airquality[4:6, ]
+```
+
+```
+##   Ozone Solar.R Wind Temp Month Day
+## 4    18     313 11.5   62     5   4
+## 5    NA      NA 14.3   56     5   5
+## 6    28      NA 14.9   66     5   6
+```
+
+---
+
+### Selección de datos
+
+Las columnas también pueden ser seleccionadas por sus nombres de dos formas.
+
+--
+
+1.
+
+
+```r
+head(airquality$Ozone, n = 15)
+```
+
+```
+##  [1] 41 36 12 18 NA 28 23 19  8 NA  7 16 11 14 18
+```
+
+--
+
+2.
+
+
+```r
+airquality[1:6, c("Ozone", "Month", "Day")]
+```
+
+```
+##   Ozone Month Day
+## 1    41     5   1
+## 2    36     5   2
+## 3    12     5   3
+## 4    18     5   4
+## 5    NA     5   5
+## 6    28     5   6
+```
+
+---
+
+class: inverse, center, middle
+
+# Un pequeño ejercicio
+
+Vamos a hacer lo siguiente. Preparen un pequeño código que extraiga los 10 primeros valores de temperatura y los 15 últimos de radiación con sus respectivas fechas. Pueden mostrar el resultado con un `print()`.
+
+---
+
+class: inverse, center, middle
+
+# Lectura de datos
+
+---
+
+### Lectura de datos
+
+Bueno, depende del dato con el que desees trabajar, deberás utilizar diferentes paquetes o funciones de R.
+
+Pero vamos por lo básico primero. TABLAS!
+
+La mayoría de tablas se guardan en Excel, pero veremos formatos más sencillos como el Texto [.txt] o separado por comas [.csv]
+
+--
+
+- `read.table` es el comando genérico para leer tablas
+
+
+```r
+cierren = read.table("Campo_de_Marte.csv", header = T, sep = ",", stringsAsFactor = F)
+```
+
+- `read.csv` lee archivos .csv sin tipear tanta cosa
+
+
+```r
+congreso = read.csv("Campo_de_Marte.csv", stringsAsFactor = F)
+```
+
+---
+
+class: inverse, center, middle
+
+# Guardando datos
+
+---
+
+# Guardando datos
+
+Guardar o exportar una tabla como un archivo es algo muy sencillo con el comando `write.table` o `write.csv`.
+
+
+```r
+write.csv(congreso, file = "Campo_de_Marte.csv")
+```
+
+&lt;img src="https://memegenerator.net/img/instances/64112677/well-that-was-easy.jpg" width="60%" /&gt;
+
+---
+
+### Unos tips
+
+Ya que tenemos una tabla, podemos usar algunos comandos para dar una ojeada a la data.
+
+- `head()` permite ver las 6 primeras filas.
+
+- `tail()` permite ver las 6 últimas.
+
+- `View()` abre una nueva ventana con la tabla.
+
+- `class()` mostrará el tipo de dato o estructura de un objeto.
+
+- `str()` te muestra cómo está estructurado un objeto.
+
+- `plot()` hace una gráfica rápida. Recomendable utilizarlo sobre una columna.
+
+Denle una probadita a esos comandos y seguimos avanzando...
+
+---
+
+class: inverse, center, middle
+
+# Manipulación de datos 
+
+Así bien xvr que parecerás programador.
+
+&lt;img src="https://hips.hearstapps.com/ghk.h-cdn.co/assets/cm/15/11/54ffe5266025c-dog1.jpg" width="60%" /&gt;
+
+---
+
+### Paquete `dplyr`
+
+Primero que nada, necesitaremos el paquete `dplyr`!
+
+--
+
+¿Lo instalaron como les dije no?
+
+--
+
+# ¿NOOOOO?
+
+--
+
+.small[Estos pend...]
+
+&lt;img src="https://i.imgur.com/iWKad22.jpg" width="30%" /&gt;
+
+--
+
+
+```r
+install.packages("dplyr")
+```
+
+---
+
+### Los comandos izipizi
+
+Si bien el `dplyr` tiene varios comandos, solo veremos los más utilizados.
+
+--
+
+- `filter` selecciona un grupo de filas que cumplan una condición.
+
+
+```r
+filter(airquality, Month == 6)
+```
+
+```
+##    Ozone Solar.R Wind Temp Month Day
+## 1     NA     286  8.6   78     6   1
+## 2     NA     287  9.7   74     6   2
+## 3     NA     242 16.1   67     6   3
+## 4     NA     186  9.2   84     6   4
+## 5     NA     220  8.6   85     6   5
+## 6     NA     264 14.3   79     6   6
+## 7     29     127  9.7   82     6   7
+## 8     NA     273  6.9   87     6   8
+## 9     71     291 13.8   90     6   9
+## 10    39     323 11.5   87     6  10
+## 11    NA     259 10.9   93     6  11
+## 12    NA     250  9.2   92     6  12
+## 13    23     148  8.0   82     6  13
+## 14    NA     332 13.8   80     6  14
+## 15    NA     322 11.5   79     6  15
+## 16    21     191 14.9   77     6  16
+## 17    37     284 20.7   72     6  17
+## 18    20      37  9.2   65     6  18
+## 19    12     120 11.5   73     6  19
+## 20    13     137 10.3   76     6  20
+## 21    NA     150  6.3   77     6  21
+## 22    NA      59  1.7   76     6  22
+## 23    NA      91  4.6   76     6  23
+## 24    NA     250  6.3   76     6  24
+## 25    NA     135  8.0   75     6  25
+## 26    NA     127  8.0   78     6  26
+## 27    NA      47 10.3   73     6  27
+## 28    NA      98 11.5   80     6  28
+## 29    NA      31 14.9   77     6  29
+## 30    NA     138  8.0   83     6  30
+```
+
+---
+
+### Los comandos izipizi
+
+- `select` selecciona columnas, muy similar a cómo lo puedes hacer con el $ o los [], pero es mucho más versátil.
+
+
+```r
+select(airquality, Month, Day, Solar.R)
+```
+
+```
+##     Month Day Solar.R
+## 1       5   1     190
+## 2       5   2     118
+## 3       5   3     149
+## 4       5   4     313
+## 5       5   5      NA
+## 6       5   6      NA
+## 7       5   7     299
+## 8       5   8      99
+## 9       5   9      19
+## 10      5  10     194
+## 11      5  11      NA
+## 12      5  12     256
+## 13      5  13     290
+## 14      5  14     274
+## 15      5  15      65
+## 16      5  16     334
+## 17      5  17     307
+## 18      5  18      78
+## 19      5  19     322
+## 20      5  20      44
+## 21      5  21       8
+## 22      5  22     320
+## 23      5  23      25
+## 24      5  24      92
+## 25      5  25      66
+## 26      5  26     266
+## 27      5  27      NA
+## 28      5  28      13
+## 29      5  29     252
+## 30      5  30     223
+## 31      5  31     279
+## 32      6   1     286
+## 33      6   2     287
+## 34      6   3     242
+## 35      6   4     186
+## 36      6   5     220
+## 37      6   6     264
+## 38      6   7     127
+## 39      6   8     273
+## 40      6   9     291
+## 41      6  10     323
+## 42      6  11     259
+## 43      6  12     250
+## 44      6  13     148
+## 45      6  14     332
+## 46      6  15     322
+## 47      6  16     191
+## 48      6  17     284
+## 49      6  18      37
+## 50      6  19     120
+## 51      6  20     137
+## 52      6  21     150
+## 53      6  22      59
+## 54      6  23      91
+## 55      6  24     250
+## 56      6  25     135
+## 57      6  26     127
+## 58      6  27      47
+## 59      6  28      98
+## 60      6  29      31
+## 61      6  30     138
+## 62      7   1     269
+## 63      7   2     248
+## 64      7   3     236
+## 65      7   4     101
+## 66      7   5     175
+## 67      7   6     314
+## 68      7   7     276
+## 69      7   8     267
+## 70      7   9     272
+## 71      7  10     175
+## 72      7  11     139
+## 73      7  12     264
+## 74      7  13     175
+## 75      7  14     291
+## 76      7  15      48
+## 77      7  16     260
+## 78      7  17     274
+## 79      7  18     285
+## 80      7  19     187
+## 81      7  20     220
+## 82      7  21       7
+## 83      7  22     258
+## 84      7  23     295
+## 85      7  24     294
+## 86      7  25     223
+## 87      7  26      81
+## 88      7  27      82
+## 89      7  28     213
+## 90      7  29     275
+## 91      7  30     253
+## 92      7  31     254
+## 93      8   1      83
+## 94      8   2      24
+## 95      8   3      77
+## 96      8   4      NA
+## 97      8   5      NA
+## 98      8   6      NA
+## 99      8   7     255
+## 100     8   8     229
+## 101     8   9     207
+## 102     8  10     222
+## 103     8  11     137
+## 104     8  12     192
+## 105     8  13     273
+## 106     8  14     157
+## 107     8  15      64
+## 108     8  16      71
+## 109     8  17      51
+## 110     8  18     115
+## 111     8  19     244
+## 112     8  20     190
+## 113     8  21     259
+## 114     8  22      36
+## 115     8  23     255
+## 116     8  24     212
+## 117     8  25     238
+## 118     8  26     215
+## 119     8  27     153
+## 120     8  28     203
+## 121     8  29     225
+## 122     8  30     237
+## 123     8  31     188
+## 124     9   1     167
+## 125     9   2     197
+## 126     9   3     183
+## 127     9   4     189
+## 128     9   5      95
+## 129     9   6      92
+## 130     9   7     252
+## 131     9   8     220
+## 132     9   9     230
+## 133     9  10     259
+## 134     9  11     236
+## 135     9  12     259
+## 136     9  13     238
+## 137     9  14      24
+## 138     9  15     112
+## 139     9  16     237
+## 140     9  17     224
+## 141     9  18      27
+## 142     9  19     238
+## 143     9  20     201
+## 144     9  21     238
+## 145     9  22      14
+## 146     9  23     139
+## 147     9  24      49
+## 148     9  25      20
+## 149     9  26     193
+## 150     9  27     145
+## 151     9  28     191
+## 152     9  29     131
+## 153     9  30     223
+```
+
+---
+
+### Los comandos izipizi
+
+- `arrange` te permite ordenar toda la tabla en base a una columna. Hay que tener cuiado con los NA.
+
+
+```r
+arrange(airquality, Temp)
+```
+
+```
+##     Ozone Solar.R Wind Temp Month Day
+## 1      NA      NA 14.3   56     5   5
+## 2       6      78 18.4   57     5  18
+## 3      NA      66 16.6   57     5  25
+## 4      NA      NA  8.0   57     5  27
+## 5      18      65 13.2   58     5  15
+## 6      NA     266 14.9   58     5  26
+## 7      19      99 13.8   59     5   8
+## 8       1       8  9.7   59     5  21
+## 9       8      19 20.1   61     5   9
+## 10      4      25  9.7   61     5  23
+## 11     32      92 12.0   61     5  24
+## 12     18     313 11.5   62     5   4
+## 13     11      44  9.7   62     5  20
+## 14     14      20 16.6   63     9  25
+## 15     14     334 11.5   64     5  16
+## 16     13     238 12.6   64     9  21
+## 17     23     299  8.6   65     5   7
+## 18     20      37  9.2   65     6  18
+## 19     28      NA 14.9   66     5   6
+## 20     11     290  9.2   66     5  13
+## 21     34     307 12.0   66     5  17
+## 22     41     190  7.4   67     5   1
+## 23     23      13 12.0   67     5  28
+## 24     NA     242 16.1   67     6   3
+## 25     18     224 13.8   67     9  17
+## 26     14     274 10.9   68     5  14
+## 27     30     322 11.5   68     5  19
+## 28     24     238 10.3   68     9  19
+## 29     20     223 11.5   68     9  30
+## 30     NA     194  8.6   69     5  10
+## 31     16     256  9.7   69     5  12
+## 32      7      49 10.3   69     9  24
+## 33     30     193  6.9   70     9  26
+## 34      9      24 10.9   71     9  14
+## 35     13     112 11.5   71     9  15
+## 36     23      14  9.2   71     9  22
+## 37     36     118  8.0   72     5   2
+## 38     37     284 20.7   72     6  17
+## 39      9      36 14.3   72     8  22
+## 40     11     320 16.6   73     5  22
+## 41     12     120 11.5   73     6  19
+## 42     NA      47 10.3   73     6  27
+## 43     10     264 14.3   73     7  12
+## 44     24     259  9.7   73     9  10
+## 45     12     149 12.6   74     5   3
+## 46      7      NA  6.9   74     5  11
+## 47     NA     287  9.7   74     6   2
+## 48     16       7  6.9   74     7  21
+## 49     NA     135  8.0   75     6  25
+## 50     NA     255 12.6   75     8  23
+## 51     21     230 10.9   75     9   9
+## 52     14     191 14.3   75     9  28
+## 53     37     279  7.4   76     5  31
+## 54     13     137 10.3   76     6  20
+## 55     NA      59  1.7   76     6  22
+## 56     NA      91  4.6   76     6  23
+## 57     NA     250  6.3   76     6  24
+## 58     23     115  7.4   76     8  18
+## 59     21     259 15.5   76     9  12
+## 60     13      27 10.3   76     9  18
+## 61     18     131  8.0   76     9  29
+## 62     21     191 14.9   77     6  16
+## 63     NA     150  6.3   77     6  21
+## 64     NA      31 14.9   77     6  29
+## 65     22      71 10.3   77     8  16
+## 66     21     259 15.5   77     8  21
+## 67     28     238  6.3   77     9  13
+## 68     NA     145 13.2   77     9  27
+## 69     NA     286  8.6   78     6   1
+## 70     NA     127  8.0   78     6  26
+## 71     31     244 10.9   78     8  19
+## 72     44     190 10.3   78     8  20
+## 73     23     220 10.3   78     9   8
+## 74     46     237  6.9   78     9  16
+## 75    115     223  5.7   79     5  30
+## 76     NA     264 14.3   79     6   6
+## 77     NA     322 11.5   79     6  15
+## 78     NA      64 11.5   79     8  15
+## 79     59      51  6.3   79     8  17
+## 80     45     212  9.7   79     8  24
+## 81     NA     332 13.8   80     6  14
+## 82     NA      98 11.5   80     6  28
+## 83      7      48 14.3   80     7  15
+## 84     65     157  9.7   80     8  14
+## 85     20     252 10.9   80     9   7
+## 86     45     252 14.9   81     5  29
+## 87     32     236  9.2   81     7   3
+## 88     27     175 14.9   81     7  13
+## 89     48     260  6.9   81     7  16
+## 90     NA     258  9.7   81     7  22
+## 91     59     254  9.2   81     7  31
+## 92     39      83  6.9   81     8   1
+## 93      9      24 13.8   81     8   2
+## 94    168     238  3.4   81     8  25
+## 95     44     236 14.9   81     9  11
+## 96     36     139 10.3   81     9  23
+## 97     29     127  9.7   82     6   7
+## 98     23     148  8.0   82     6  13
+## 99     NA     139  8.6   82     7  11
+## 100    35     274 10.3   82     7  17
+## 101    NA     295 11.5   82     7  23
+## 102    20      81  8.6   82     7  26
+## 103    16      77  7.4   82     8   3
+## 104    28     273 11.5   82     8  13
+## 105    16     201  8.0   82     9  20
+## 106    NA     138  8.0   83     6  30
+## 107    64     175  4.6   83     7   5
+## 108    40     314 10.9   83     7   6
+## 109    64     253  7.4   83     7  30
+## 110    NA     186  9.2   84     6   4
+## 111   135     269  4.1   84     7   1
+## 112    NA     101 10.9   84     7   4
+## 113    61     285  6.3   84     7  18
+## 114    32      92 15.5   84     9   6
+## 115    NA     220  8.6   85     6   5
+## 116    49     248  9.2   85     7   2
+## 117    63     220 11.5   85     7  20
+## 118   108     223  8.0   85     7  25
+## 119    35      NA  7.4   85     8   5
+## 120    80     294  8.6   86     7  24
+## 121    52      82 12.0   86     7  27
+## 122    50     275  7.4   86     7  29
+## 123    78      NA  6.9   86     8   4
+## 124    NA     137 11.5   86     8  11
+## 125    44     192 11.5   86     8  12
+## 126    73     215  8.0   86     8  26
+## 127    NA     273  6.9   87     6   8
+## 128    39     323 11.5   87     6  10
+## 129    79     187  5.1   87     7  19
+## 130    66      NA  4.6   87     8   6
+## 131    47      95  7.4   87     9   5
+## 132    77     276  5.1   88     7   7
+## 133    82     213  7.4   88     7  28
+## 134    NA     153  5.7   88     8  27
+## 135    85     175  7.4   89     7  10
+## 136   122     255  4.0   89     8   7
+## 137    71     291 13.8   90     6   9
+## 138    89     229 10.3   90     8   8
+## 139   110     207  8.0   90     8   9
+## 140    NA     291 14.9   91     7  14
+## 141    96     167  6.9   91     9   1
+## 142    NA     250  9.2   92     6  12
+## 143    97     267  6.3   92     7   8
+## 144    97     272  5.7   92     7   9
+## 145    NA     222  8.6   92     8  10
+## 146    78     197  5.1   92     9   2
+## 147    NA     259 10.9   93     6  11
+## 148    73     183  2.8   93     9   3
+## 149    91     189  4.6   93     9   4
+## 150   118     225  2.3   94     8  29
+## 151    85     188  6.3   94     8  31
+## 152    84     237  6.3   96     8  30
+## 153    76     203  9.7   97     8  28
+```
+
+---
+
+### Comandos para impresionar a los cachimbos
+
+Hay un par de comandos que vuelven al paquete `dplyr` una opción interesante.
+
+--
+
+- `mutate` permite crear nuevas columnas utilizando las columnas existentes en la tabla o las que acabas de crear.
+
+
+```r
+mutate(airquality, Temp_C = (Temp - 32) * 5/9, Temp_K = Temp_C + 273)
+```
+
+```
+##     Ozone Solar.R Wind Temp Month Day   Temp_C   Temp_K
+## 1      41     190  7.4   67     5   1 19.44444 292.4444
+## 2      36     118  8.0   72     5   2 22.22222 295.2222
+## 3      12     149 12.6   74     5   3 23.33333 296.3333
+## 4      18     313 11.5   62     5   4 16.66667 289.6667
+## 5      NA      NA 14.3   56     5   5 13.33333 286.3333
+## 6      28      NA 14.9   66     5   6 18.88889 291.8889
+## 7      23     299  8.6   65     5   7 18.33333 291.3333
+## 8      19      99 13.8   59     5   8 15.00000 288.0000
+## 9       8      19 20.1   61     5   9 16.11111 289.1111
+## 10     NA     194  8.6   69     5  10 20.55556 293.5556
+## 11      7      NA  6.9   74     5  11 23.33333 296.3333
+## 12     16     256  9.7   69     5  12 20.55556 293.5556
+## 13     11     290  9.2   66     5  13 18.88889 291.8889
+## 14     14     274 10.9   68     5  14 20.00000 293.0000
+## 15     18      65 13.2   58     5  15 14.44444 287.4444
+## 16     14     334 11.5   64     5  16 17.77778 290.7778
+## 17     34     307 12.0   66     5  17 18.88889 291.8889
+## 18      6      78 18.4   57     5  18 13.88889 286.8889
+## 19     30     322 11.5   68     5  19 20.00000 293.0000
+## 20     11      44  9.7   62     5  20 16.66667 289.6667
+## 21      1       8  9.7   59     5  21 15.00000 288.0000
+## 22     11     320 16.6   73     5  22 22.77778 295.7778
+## 23      4      25  9.7   61     5  23 16.11111 289.1111
+## 24     32      92 12.0   61     5  24 16.11111 289.1111
+## 25     NA      66 16.6   57     5  25 13.88889 286.8889
+## 26     NA     266 14.9   58     5  26 14.44444 287.4444
+## 27     NA      NA  8.0   57     5  27 13.88889 286.8889
+## 28     23      13 12.0   67     5  28 19.44444 292.4444
+## 29     45     252 14.9   81     5  29 27.22222 300.2222
+## 30    115     223  5.7   79     5  30 26.11111 299.1111
+## 31     37     279  7.4   76     5  31 24.44444 297.4444
+## 32     NA     286  8.6   78     6   1 25.55556 298.5556
+## 33     NA     287  9.7   74     6   2 23.33333 296.3333
+## 34     NA     242 16.1   67     6   3 19.44444 292.4444
+## 35     NA     186  9.2   84     6   4 28.88889 301.8889
+## 36     NA     220  8.6   85     6   5 29.44444 302.4444
+## 37     NA     264 14.3   79     6   6 26.11111 299.1111
+## 38     29     127  9.7   82     6   7 27.77778 300.7778
+## 39     NA     273  6.9   87     6   8 30.55556 303.5556
+## 40     71     291 13.8   90     6   9 32.22222 305.2222
+## 41     39     323 11.5   87     6  10 30.55556 303.5556
+## 42     NA     259 10.9   93     6  11 33.88889 306.8889
+## 43     NA     250  9.2   92     6  12 33.33333 306.3333
+## 44     23     148  8.0   82     6  13 27.77778 300.7778
+## 45     NA     332 13.8   80     6  14 26.66667 299.6667
+## 46     NA     322 11.5   79     6  15 26.11111 299.1111
+## 47     21     191 14.9   77     6  16 25.00000 298.0000
+## 48     37     284 20.7   72     6  17 22.22222 295.2222
+## 49     20      37  9.2   65     6  18 18.33333 291.3333
+## 50     12     120 11.5   73     6  19 22.77778 295.7778
+## 51     13     137 10.3   76     6  20 24.44444 297.4444
+## 52     NA     150  6.3   77     6  21 25.00000 298.0000
+## 53     NA      59  1.7   76     6  22 24.44444 297.4444
+## 54     NA      91  4.6   76     6  23 24.44444 297.4444
+## 55     NA     250  6.3   76     6  24 24.44444 297.4444
+## 56     NA     135  8.0   75     6  25 23.88889 296.8889
+## 57     NA     127  8.0   78     6  26 25.55556 298.5556
+## 58     NA      47 10.3   73     6  27 22.77778 295.7778
+## 59     NA      98 11.5   80     6  28 26.66667 299.6667
+## 60     NA      31 14.9   77     6  29 25.00000 298.0000
+## 61     NA     138  8.0   83     6  30 28.33333 301.3333
+## 62    135     269  4.1   84     7   1 28.88889 301.8889
+## 63     49     248  9.2   85     7   2 29.44444 302.4444
+## 64     32     236  9.2   81     7   3 27.22222 300.2222
+## 65     NA     101 10.9   84     7   4 28.88889 301.8889
+## 66     64     175  4.6   83     7   5 28.33333 301.3333
+## 67     40     314 10.9   83     7   6 28.33333 301.3333
+## 68     77     276  5.1   88     7   7 31.11111 304.1111
+## 69     97     267  6.3   92     7   8 33.33333 306.3333
+## 70     97     272  5.7   92     7   9 33.33333 306.3333
+## 71     85     175  7.4   89     7  10 31.66667 304.6667
+## 72     NA     139  8.6   82     7  11 27.77778 300.7778
+## 73     10     264 14.3   73     7  12 22.77778 295.7778
+## 74     27     175 14.9   81     7  13 27.22222 300.2222
+## 75     NA     291 14.9   91     7  14 32.77778 305.7778
+## 76      7      48 14.3   80     7  15 26.66667 299.6667
+## 77     48     260  6.9   81     7  16 27.22222 300.2222
+## 78     35     274 10.3   82     7  17 27.77778 300.7778
+## 79     61     285  6.3   84     7  18 28.88889 301.8889
+## 80     79     187  5.1   87     7  19 30.55556 303.5556
+## 81     63     220 11.5   85     7  20 29.44444 302.4444
+## 82     16       7  6.9   74     7  21 23.33333 296.3333
+## 83     NA     258  9.7   81     7  22 27.22222 300.2222
+## 84     NA     295 11.5   82     7  23 27.77778 300.7778
+## 85     80     294  8.6   86     7  24 30.00000 303.0000
+## 86    108     223  8.0   85     7  25 29.44444 302.4444
+## 87     20      81  8.6   82     7  26 27.77778 300.7778
+## 88     52      82 12.0   86     7  27 30.00000 303.0000
+## 89     82     213  7.4   88     7  28 31.11111 304.1111
+## 90     50     275  7.4   86     7  29 30.00000 303.0000
+## 91     64     253  7.4   83     7  30 28.33333 301.3333
+## 92     59     254  9.2   81     7  31 27.22222 300.2222
+## 93     39      83  6.9   81     8   1 27.22222 300.2222
+## 94      9      24 13.8   81     8   2 27.22222 300.2222
+## 95     16      77  7.4   82     8   3 27.77778 300.7778
+## 96     78      NA  6.9   86     8   4 30.00000 303.0000
+## 97     35      NA  7.4   85     8   5 29.44444 302.4444
+## 98     66      NA  4.6   87     8   6 30.55556 303.5556
+## 99    122     255  4.0   89     8   7 31.66667 304.6667
+## 100    89     229 10.3   90     8   8 32.22222 305.2222
+## 101   110     207  8.0   90     8   9 32.22222 305.2222
+## 102    NA     222  8.6   92     8  10 33.33333 306.3333
+## 103    NA     137 11.5   86     8  11 30.00000 303.0000
+## 104    44     192 11.5   86     8  12 30.00000 303.0000
+## 105    28     273 11.5   82     8  13 27.77778 300.7778
+## 106    65     157  9.7   80     8  14 26.66667 299.6667
+## 107    NA      64 11.5   79     8  15 26.11111 299.1111
+## 108    22      71 10.3   77     8  16 25.00000 298.0000
+## 109    59      51  6.3   79     8  17 26.11111 299.1111
+## 110    23     115  7.4   76     8  18 24.44444 297.4444
+## 111    31     244 10.9   78     8  19 25.55556 298.5556
+## 112    44     190 10.3   78     8  20 25.55556 298.5556
+## 113    21     259 15.5   77     8  21 25.00000 298.0000
+## 114     9      36 14.3   72     8  22 22.22222 295.2222
+## 115    NA     255 12.6   75     8  23 23.88889 296.8889
+## 116    45     212  9.7   79     8  24 26.11111 299.1111
+## 117   168     238  3.4   81     8  25 27.22222 300.2222
+## 118    73     215  8.0   86     8  26 30.00000 303.0000
+## 119    NA     153  5.7   88     8  27 31.11111 304.1111
+## 120    76     203  9.7   97     8  28 36.11111 309.1111
+## 121   118     225  2.3   94     8  29 34.44444 307.4444
+## 122    84     237  6.3   96     8  30 35.55556 308.5556
+## 123    85     188  6.3   94     8  31 34.44444 307.4444
+## 124    96     167  6.9   91     9   1 32.77778 305.7778
+## 125    78     197  5.1   92     9   2 33.33333 306.3333
+## 126    73     183  2.8   93     9   3 33.88889 306.8889
+## 127    91     189  4.6   93     9   4 33.88889 306.8889
+## 128    47      95  7.4   87     9   5 30.55556 303.5556
+## 129    32      92 15.5   84     9   6 28.88889 301.8889
+## 130    20     252 10.9   80     9   7 26.66667 299.6667
+## 131    23     220 10.3   78     9   8 25.55556 298.5556
+## 132    21     230 10.9   75     9   9 23.88889 296.8889
+## 133    24     259  9.7   73     9  10 22.77778 295.7778
+## 134    44     236 14.9   81     9  11 27.22222 300.2222
+## 135    21     259 15.5   76     9  12 24.44444 297.4444
+## 136    28     238  6.3   77     9  13 25.00000 298.0000
+## 137     9      24 10.9   71     9  14 21.66667 294.6667
+## 138    13     112 11.5   71     9  15 21.66667 294.6667
+## 139    46     237  6.9   78     9  16 25.55556 298.5556
+## 140    18     224 13.8   67     9  17 19.44444 292.4444
+## 141    13      27 10.3   76     9  18 24.44444 297.4444
+## 142    24     238 10.3   68     9  19 20.00000 293.0000
+## 143    16     201  8.0   82     9  20 27.77778 300.7778
+## 144    13     238 12.6   64     9  21 17.77778 290.7778
+## 145    23      14  9.2   71     9  22 21.66667 294.6667
+## 146    36     139 10.3   81     9  23 27.22222 300.2222
+## 147     7      49 10.3   69     9  24 20.55556 293.5556
+## 148    14      20 16.6   63     9  25 17.22222 290.2222
+## 149    30     193  6.9   70     9  26 21.11111 294.1111
+## 150    NA     145 13.2   77     9  27 25.00000 298.0000
+## 151    14     191 14.3   75     9  28 23.88889 296.8889
+## 152    18     131  8.0   76     9  29 24.44444 297.4444
+## 153    20     223 11.5   68     9  30 20.00000 293.0000
+```
+
+---
+
+### Comandos para impresionar a los cachimbos
+
+- `summarize` permite hacer un cálculo general sobre toda una columna. Puede ser una suma o promedio de todos los valores de la columna.
+
+
+```r
+summarize(airquality, Promedio = mean(Temp), Desviacion = sd(Temp))
+```
+
+```
+##   Promedio Desviacion
+## 1 77.88235    9.46527
+```
+
+---
+
+### Comandos que te dejarán con la cara de "chuuuu..."
+
+Si bien los comandos anteriores son útiles para trabajar tablas, el siguiente comando es lo que hace al `dplyr` un paquete tan poderoso.
+
+--
+
+- `group_by` permite generar grupos en la tabla en base a los elementos comunes en una columna.
+
+
+```r
+group_by(airquality, Month)
+```
+
+```
+## # A tibble: 153 x 6
+## # Groups:   Month [5]
+##    Ozone Solar.R  Wind  Temp Month   Day
+##    &lt;int&gt;   &lt;int&gt; &lt;dbl&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt;
+##  1    41     190   7.4    67     5     1
+##  2    36     118   8      72     5     2
+##  3    12     149  12.6    74     5     3
+##  4    18     313  11.5    62     5     4
+##  5    NA      NA  14.3    56     5     5
+##  6    28      NA  14.9    66     5     6
+##  7    23     299   8.6    65     5     7
+##  8    19      99  13.8    59     5     8
+##  9     8      19  20.1    61     5     9
+## 10    NA     194   8.6    69     5    10
+## # ... with 143 more rows
+```
+
+---
+
+Este... y ya?... eso nomás hace?... hasta el curso de ética parece más util
+&lt;img src="https://i.pinimg.com/originals/63/3c/d4/633cd4c9d0b473eeae5f4e15df78ccea.jpg" width="5%" /&gt;
+
+--
+
+Bueno... por si solo no es que haga mucha cosa, pero si lo uitilzas en conjunto con los comandos `mutate` o `summarize` es cuando el comando se vuelve poderoso.
+
+--
+
+
+```r
+ahorasipe = group_by(airquality, Month)
+summarize(ahorasipe, Temp_prom = mean(Temp))
+```
+
+```
+## # A tibble: 5 x 2
+##   Month Temp_prom
+##   &lt;int&gt;     &lt;dbl&gt;
+## 1     5      65.5
+## 2     6      79.1
+## 3     7      83.9
+## 4     8      84.0
+## 5     9      76.9
+```
+
+----
+
+y el paquete no se queda ahí, puedes aprender más cosas en esta 
+[Introducción al paquete dplyr](https://cran.r-project.org/web/packages/dplyr/vignettes/dplyr.html)
+
+---
+
+class: inverse, center
+
+# Ahora si, pónganse a chambear malditos.
+
+De todos los archivos que les pasé deberán sacar el promedio y desviación estándar mensual de todas las variables meteorológicas que tiene el archivo. Debido a que la data de SENAMHI esta peor que sus parciales, solo harán con el año 2018. El resultado lo deberán de juntar en un única tabla o data.frame.
+
+![](clase_2_files/no_te_pases.jpg)
+
+---
+
+class: inverse, center, middle
+
+### Consejos
+
+- Asegúrense de ubicar a R en la carpeta adecuada con `setwd()`. Yo les recomiendo que los datos lo guarden dentro de una carpeta adicional.
+
+- Para poder trabajar con todos los archivos, pueden generar una lista con el comando `list.files("carpeta")`.
+
+- Ya que el procesamiento de los datos será igual para todos los archivos, utilicen un bucle `for` para que repita el procedimiento para todos los archivos.
+
+--
+
+### Trabajo
+
+- Deberán presentar el código listo para la siguiente clase.
+
+- Yo les mostraré una versión de cómo hice el procedimiento.
+
+---
+
+class: inverse, center, middle
+
+# Gracias por aguantarme!
+
+Si tienen dudas pueden escribirme a
+
+dante.tcg@gmail.com
+
+O al jueiz si me tiene agregado
+
+Las clases pueden encontrarlas en
+
+&lt;https://danteca.github.io/&gt;
     </textarea>
 <style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
 <script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>

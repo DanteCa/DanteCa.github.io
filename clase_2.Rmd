@@ -1,5 +1,5 @@
 ---
-title: "R Aplicado a la Meteorologia - Basico"
+title: "R Aplicado a la Meteorología - Básico"
 subtitle: "Clase 2 - Manejo de tablas"
 author: "Dante Castro Garro"
 date: "2019-06-01"
@@ -12,19 +12,20 @@ output:
 
 ```{r setup, include = FALSE}
 options(htmltools.dir.version = FALSE)
+library(dplyr)
 ```
 
 # Ambiente de trabajo
 
 R siempre trabaja en una carpeta. Por defecto, suele ser `"C:/Users/usuario/Documents/"`
 
-¿Pero como podemos estar seguros?
+¿Pero cómo podemos estar seguros?
 
 --
 
-El comando `getwd()` nos indicara la carpeta donde estamo trabajando.
+El comando `getwd()` nos indicará la carpeta donde estamos trabajando.
 
-```{r, evals = TRUE}
+```{r, eval = TRUE}
 getwd()
 ```
 
@@ -34,7 +35,9 @@ getwd()
 
 Podemos utilizar el comando `setwd()`, donde deberemos colocar la ruta de la carpeta a la que deseamos cambiar.
 
-`setwd("D:/Datos")`
+```{r, eval = FALSE}
+setwd("D:/Datos")
+```
 
 --
 
@@ -52,11 +55,11 @@ Hay que tener cuidado en la forma en cómo escribimos la ruta. No es lo mismo us
 
 ---
 
-# ¿Y cómo chequeamos el contenido de la carpeta de trabajo?"
+# ¿Y cómo chequeamos el contenido de la carpeta de trabajo?
 
 Eso puede hacerse con el comando `list.files()`
 
-```{r}
+```{r, eval = TRUE}
 list.files()
 ```
 
@@ -68,9 +71,435 @@ Esto lo utilizaremos más adelante,
 
 class: inverse, center, middle
 
-# Ahora si continuemos donde nos quedamos la semana pasada.
+### Ahora si continuemos donde nos quedamos la semana pasada.
+# Tipos de objetos
 
 ---
 
+### Tipos de objetos
+
+Enteros `[integer]`
+
+```{r, eval = FALSE}
+i = 1:10
+```
+
+--
+
+Reales `[numeric]`
+
+```{r, eval = FALSE}
+j = c(1.1, 2.2, 3.3)
+```
+
+--
+
+Lógicos `[logical]`
+
+```{r, eval = FALSE}
+k = c(T, F, T, F)
+```
+
+--
+
+Caracteres `[character]`
+
+```{r, eval = FALSE}
+l = c("Ya", "perdiste pe", "varón", "suelta el billete noma")
+```
+
+--
+
+Complejos `[complex]`
+
+```{r, eval = FALSE}
+m = 4+3i
+```
+
+---
+
+class: inverse, center, middle
+
 # Estructura de datos
+
+---
+
+### Estructura de datos
+
+- Vectores
+
+- Listas
+
+- Matrices
+
+- Data frames
+
+- Factores 
+
+--
+
+Y otros más que les harán la vida imposible... 
+--
+como tu ex 
+
+```{r echo = FALSE, out.width = "40%"}
+knitr::include_graphics("https://i.kym-cdn.com/photos/images/newsfeed/001/384/531/8ed.jpg")
+```
+
+---
+
 ## Dimensiones
+### 1-D
+
+Son los llamados `vectores`.
+
+```{r, eval = TRUE}
+x = c(1,2,4,5,67,87,98,9,342)
+x
+```
+
+---
+
+## Dimensiones
+### 2-D
+
+Son las llamadas `matrices`
+```{r, eval = TRUE}
+y = matrix(1:9, nrow = 3, ncol = 3)
+y
+```
+---
+
+## Dimensiones
+### 2-D
+
+Los `data.frame` también están incluídos
+```{r, eval = TRUE}
+head(airquality)
+```
+
+---
+
+## Dimensiones
+### 3-D (o más D's)
+
+Son conocidos como `arrays`. 
+
+Técnicamente, las `matrices` son `arrays` de 2-D
+
+```{r, eval = TRUE}
+z = array(1:8, c(2,2,2))
+z
+```
+---
+
+class: inverse, center, middle
+
+# Selección de datos
+
+### Vamos a enfocarnos en el data frame `airquality`
+
+---
+
+### Selección de datos
+
+Se utilizan los corchetes `[a,b]` para hacer la selección.
+
+- El valor de `"a"` indicarán las filas a seleccionar, mientras que el valor de `"b"` será para los columnas.
+
+--
+
+Selección de la 4ta fila y 2da columna.
+
+```{r, eval = TRUE}
+airquality[4,2]
+```
+
+--
+
+Se puede seleccionar más de una fila o columna al mismo tiempo, o seleccionar todas las filas y columnas si no se asigna un valor
+
+```{r, eval = TRUE}
+airquality[4:6, ]
+```
+
+---
+
+### Selección de datos
+
+Las columnas también pueden ser seleccionadas por sus nombres de dos formas.
+
+--
+
+1.
+
+```{r, eval = TRUE}
+head(airquality$Ozone, n = 15)
+```
+
+--
+
+2.
+
+```{r, eval = TRUE}
+airquality[1:6, c("Ozone", "Month", "Day")]
+```
+
+---
+
+class: inverse, center, middle
+
+# Un pequeño ejercicio
+
+Vamos a hacer lo siguiente. Preparen un pequeño código que extraiga los 10 primeros valores de temperatura y los 15 últimos de radiación con sus respectivas fechas. Pueden mostrar el resultado con un `print()`.
+
+---
+
+class: inverse, center, middle
+
+# Lectura de datos
+
+---
+
+### Lectura de datos
+
+Bueno, depende del dato con el que desees trabajar, deberás utilizar diferentes paquetes o funciones de R.
+
+Pero vamos por lo básico primero. TABLAS!
+
+La mayoría de tablas se guardan en Excel, pero veremos formatos más sencillos como el Texto [.txt] o separado por comas [.csv]
+
+--
+
+- `read.table` es el comando genérico para leer tablas
+
+```{r, eval = FALSE}
+cierren = read.table("Campo_de_Marte.csv", header = T, sep = ",", stringsAsFactor = F)
+```
+
+- `read.csv` lee archivos .csv sin tipear tanta cosa
+
+```{r, eval = FALSE}
+congreso = read.csv("Campo_de_Marte.csv", stringsAsFactor = F)
+```
+
+---
+
+class: inverse, center, middle
+
+# Guardando datos
+
+---
+
+# Guardando datos
+
+Guardar o exportar una tabla como un archivo es algo muy sencillo con el comando `write.table` o `write.csv`.
+
+```{r, eval = FALSE}
+write.csv(congreso, file = "Campo_de_Marte.csv")
+```
+
+```{r echo = FALSE, out.width = "60%"}
+knitr::include_graphics("https://memegenerator.net/img/instances/64112677/well-that-was-easy.jpg")
+```
+
+---
+
+### Unos tips
+
+Ya que tenemos una tabla, podemos usar algunos comandos para dar una ojeada a la data.
+
+- `head()` permite ver las 6 primeras filas.
+
+- `tail()` permite ver las 6 últimas.
+
+- `View()` abre una nueva ventana con la tabla.
+
+- `class()` mostrará el tipo de dato o estructura de un objeto.
+
+- `str()` te muestra cómo está estructurado un objeto.
+
+- `plot()` hace una gráfica rápida. Recomendable utilizarlo sobre una columna.
+
+Denle una probadita a esos comandos y seguimos avanzando...
+
+---
+
+class: inverse, center, middle
+
+# Manipulación de datos 
+
+Así bien xvr que parecerás programador.
+
+```{r echo = FALSE, out.width = "60%"}
+knitr::include_graphics("https://hips.hearstapps.com/ghk.h-cdn.co/assets/cm/15/11/54ffe5266025c-dog1.jpg")
+```
+
+---
+
+### Paquete `dplyr`
+
+Primero que nada, necesitaremos el paquete `dplyr`!
+
+--
+
+¿Lo instalaron como les dije no?
+
+--
+
+# ¿NOOOOO?
+
+--
+
+.small[Estos pend...]
+
+```{r echo = FALSE, out.width = "30%"}
+knitr::include_graphics("https://i.imgur.com/iWKad22.jpg")
+```
+
+--
+
+```{r, eval = FALSE}
+install.packages("dplyr")
+```
+
+---
+
+### Los comandos izipizi
+
+Si bien el `dplyr` tiene varios comandos, solo veremos los más utilizados.
+
+--
+
+- `filter` selecciona un grupo de filas que cumplan una condición.
+
+```{r, eval = TRUE}
+filter(airquality, Month == 6)
+```
+
+---
+
+### Los comandos izipizi
+
+- `select` selecciona columnas, muy similar a cómo lo puedes hacer con el $ o los [], pero es mucho más versátil.
+
+```{r, eval = TRUE}
+select(airquality, Month, Day, Solar.R)
+```
+
+---
+
+### Los comandos izipizi
+
+- `arrange` te permite ordenar toda la tabla en base a una columna. Hay que tener cuiado con los NA.
+
+```{r, eval = TRUE}
+arrange(airquality, Temp)
+```
+
+---
+
+### Comandos para impresionar a los cachimbos
+
+Hay un par de comandos que vuelven al paquete `dplyr` una opción interesante.
+
+--
+
+- `mutate` permite crear nuevas columnas utilizando las columnas existentes en la tabla o las que acabas de crear.
+
+```{r, eval = TRUE}
+mutate(airquality, Temp_C = (Temp - 32) * 5/9, Temp_K = Temp_C + 273)
+```
+
+---
+
+### Comandos para impresionar a los cachimbos
+
+- `summarize` permite hacer un cálculo general sobre toda una columna. Puede ser una suma o promedio de todos los valores de la columna.
+
+```{r, eval = TRUE}
+summarize(airquality, Promedio = mean(Temp), Desviacion = sd(Temp))
+```
+
+---
+
+### Comandos que te dejarán con la cara de "chuuuu..."
+
+Si bien los comandos anteriores son útiles para trabajar tablas, el siguiente comando es lo que hace al `dplyr` un paquete tan poderoso.
+
+--
+
+- `group_by` permite generar grupos en la tabla en base a los elementos comunes en una columna.
+
+```{r, eval = TRUE}
+group_by(airquality, Month)
+```
+
+---
+
+Este... y ya?... eso nomás hace?... hasta el curso de ética parece más util
+```{r echo = FALSE, out.width = "5%"}
+knitr::include_graphics("https://i.pinimg.com/originals/63/3c/d4/633cd4c9d0b473eeae5f4e15df78ccea.jpg")
+```
+
+--
+
+Bueno... por si solo no es que haga mucha cosa, pero si lo uitilzas en conjunto con los comandos `mutate` o `summarize` es cuando el comando se vuelve poderoso.
+
+--
+
+```{r, eval = TRUE}
+ahorasipe = group_by(airquality, Month)
+summarize(ahorasipe, Temp_prom = mean(Temp))
+```
+
+----
+
+y el paquete no se queda ahí, puedes aprender más cosas en esta 
+[Introducción al paquete dplyr](https://cran.r-project.org/web/packages/dplyr/vignettes/dplyr.html)
+
+---
+
+class: inverse, center
+
+# Ahora si, pónganse a chambear malditos.
+
+De todos los archivos que les pasé deberán sacar el promedio y desviación estándar mensual de todas las variables meteorológicas que tiene el archivo. Debido a que la data de SENAMHI esta peor que sus parciales, solo harán con el año 2018. El resultado lo deberán de juntar en un única tabla o data.frame.
+
+![](clase_2_files/no_te_pases.jpg)
+
+---
+
+class: inverse, center, middle
+
+### Consejos
+
+- Asegúrense de ubicar a R en la carpeta adecuada con `setwd()`. Yo les recomiendo que los datos lo guarden dentro de una carpeta adicional.
+
+- Para poder trabajar con todos los archivos, pueden generar una lista con el comando `list.files("carpeta")`.
+
+- Ya que el procesamiento de los datos será igual para todos los archivos, utilicen un bucle `for` para que repita el procedimiento para todos los archivos.
+
+--
+
+### Trabajo
+
+- Deberán presentar el código listo para la siguiente clase.
+
+- Yo les mostraré una versión de cómo hice el procedimiento.
+
+---
+
+class: inverse, center, middle
+
+# Gracias por aguantarme!
+
+Si tienen dudas pueden escribirme a
+
+dante.tcg@gmail.com
+
+O al jueiz si me tiene agregado
+
+Las clases pueden encontrarlas en
+
+<https://danteca.github.io/>
