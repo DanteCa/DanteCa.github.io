@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+  <head>
+    <title>R Aplicado a la Meteorología - Básico</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Dante Castro Garro" />
+    <meta name="date" content="2019-06-08" />
+    <link href="libs/remark-css/default.css" rel="stylesheet" />
+    <link href="libs/remark-css/default-fonts.css" rel="stylesheet" />
+    <link href="libs/remark-css/hygge.css" rel="stylesheet" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# R Aplicado a la Meteorología - Básico
+## Clase 3 - Información geoespacial
+### Dante Castro Garro
+### 2019-06-08
+
+---
+
+[//]: &lt;&gt; (2)
+
+
+
+# Índice
+
+### Veremos los archivos más comunes en meteorología.
+
+--
+
+- Información tipo vectorial *(shapefiles)*.
+
+--
+
+- Información tipo raster *(tiff)*.
+
+--
+
+- Información grillada *(netCDF - grib)*.
+
+---
+
+layout: true
+
+## Información vectorial
+
+---
+[//]: &lt;&gt; (3)
+
+class: inverse, center, middle
+
+### *shapefiles*
+
+---
+[//]: &lt;&gt; (4)
+
+Dentro de R existen dos formas para trabajar estos datos
+
+- `library(rgdal)`
+
+- `library(sf)`
+
+--
+
+A pesar de que `rgdal` es más sencillo, [`sf`](https://r-spatial.github.io/sf/articles/) es más moderno, más eficiente y puede interactuar con `dplyr`
+
+---
+[//]: &lt;&gt; (5)
+
+Probemos leyendo los departamentos de Perú.
+
+
+```r
+dep = st_read("data/shapes/Limite_departamental/BAS_LIM_DEPARTAMENTO.shp", stringsAsFactors = F)
+```
+
+```
+## Reading layer `BAS_LIM_DEPARTAMENTO' from data source `C:\Users\usuario\Documents\Clases\R\Clase_3\data\shapes\Limite_departamental\BAS_LIM_DEPARTAMENTO.shp' using driver `ESRI Shapefile'
+## Simple feature collection with 25 features and 4 fields
+## geometry type:  MULTIPOLYGON
+## dimension:      XY
+## bbox:           xmin: -203260.79 ymin: 7964768.9 xmax: 1190990.8 ymax: 9995732.9
+## epsg (SRID):    32718
+## proj4string:    +proj=utm +zone=18 +south +datum=WGS84 +units=m +no_defs
+```
+
+---
+[//]: &lt;&gt; (6)
+
+...y que contiene?
+
+
+```r
+head(dep)
+```
+
+--
+
+&lt;img src="https://r-spatial.github.io/sf/articles/sf_xfig.png" width="100%" /&gt;
+
+.tiny[ok, no sale eso pero es un ejemplo nomás]
+
+---
+[//]: &lt;&gt; (7)
+
+"...ok, todo muy bonito y xvr, pero no se supone que debería en un *mapa* porque... es un .bold[*mapa*]"
+
+&lt;img src="https://i.kym-cdn.com/photos/images/original/000/787/356/d6f.jpg" width="15%" /&gt;
+
+--
+
+
+```r
+plot(dep)
+```
+
+&lt;img src="clase_3_files/figure-html/unnamed-chunk-5-1.png" width="30%" /&gt;
+
+.tiny[ahí ta pe...]
+
+---
+[//]: &lt;&gt; (8)
+
+"...ya, pero yo quiero el mapita nomas, osea el contor, *manyas*?"
+
+.center[
+&lt;img src="http://www.memes.at/faces/rage_eyes.jpg" width="10%" /&gt;
+]
+
+--
+
+
+```r
+plot(dep$geometry, axes = T)
+```
+
+&lt;img src="clase_3_files/figure-html/unnamed-chunk-7-1.png" width="35%" /&gt;
+
+.tiny[...contento?]
+
+---
+[//]: &lt;&gt; (9)
+
+"oeoeoeoeoe pero que cha son esas coordenadas?"
+
+--
+
+Bueno, el shape de los departamentos está en coordenadas *UTM*. Llevémoslo a algo más familiar, como las coordenadas *longitud/latitud*.
+
+
+```r
+dep = st_transform(dep, 4326)
+plot(dep$geometry, axes = T)
+```
+
+&lt;img src="clase_3_files/figure-html/unnamed-chunk-8-1.png" width="45%" /&gt;
+
+---
+[//]: &lt;&gt; (10)
+
+"...ya ya, pero ta monce esa gráfica. ¿No se puede hacer más xvr como para meterlo a mi informe y decir que si hice algo?"
+
+--
+
+Claro ps chuleta. Aquí un ejemplo con la columna `HECTARES`.
+
+
+```r
+plot(dep["HECTARES"], axes = T, graticule = T, key.pos = 4)
+```
+
+&lt;img src="clase_3_files/figure-html/unnamed-chunk-9-1.png" width="45%" /&gt;
+
+---
+[//]: &lt;&gt; (11)
+
+"...ahí si se ve bonis .tiny[*mmmfff*]. Ahora quiero que solo se vea Lima pero de color botella Pilsen."
+
+--
+
+
+```r
+plot(st_geometry(dep), axes = T, graticule = T)
+plot(dep[15, "NOMBDEP"], add = T, col = "darkgreen")
+```
+
+&lt;img src="clase_3_files/figure-html/unnamed-chunk-10-1.png" width="45%" /&gt;
+
+.tiny[Habla, unas chelas?]
+
+---
+[//]: &lt;&gt; (12)
+
+También podemos hacer selecciones con `dplyr::filter` como si el shape fuera una tabla o `data.frame`
+
+--
+
+
+```r
+chela = dplyr::filter(dep, COUNT &gt; 100)
+chela = dplyr::select(chela, HECTARES)
+plot(st_geometry(dep), axes = T, graticule = T)
+plot(chela, add = T)
+```
+
+&lt;img src="clase_3_files/figure-html/unnamed-chunk-11-1.png" width="50%" /&gt;
+
+---
+[//]: &lt;&gt; (13)
+
+Por último exportemos nuestro shape con coordenadas *longitud/latitud*.
+
+
+```r
+st_write(dep, "data/shapes/departamentos_geo.shp")
+```
+
+---
+[//]: &lt;&gt; (14)
+
+layout: false
+class: inverse, center, middle
+
+### Ejercicio 1
+
+Se dice que en Huancayo se toma más chela que agua. Entonces, ubiquen aquellos departamentos que sean más pequeños que el departamento donde se encuentra Huancayo. Los departamentos seleccionados deberán estar coloreados según su tamaño, el resto de departamentos deberán estar en blanco y deben mostrar también las líneas de latitud y longitud.
+
+---
+
+layout: true
+
+## Información tipo raster
+
+---
+[//]: &lt;&gt; (15)
+
+class: inverse, center, middle
+
+Jugaremos con imágenes satelitales.
+
+---
+[//]: &lt;&gt; (16)
+
+Usualmente las imágenes satelitales (y algunos otros productos) son distribuídos en un formato llamado Tiff o GeoTiff.
+
+Los paquetes que se suele usar es
+
+- `library(raster)`
+
+que puede ser complementado con otros paquetes como
+
+- `library(rasterVis)`
+
+- `library(rgdal)`
+
+- `library(gdalUtils)`
+
+---
+[//]: &lt;&gt; (17)
+
+Probemos abriendo una imagen satelital de Perú.
+
+
+```r
+library(raster)
+rtr = raster("data/PE_OR_ABI-L2-CMIPF-M3C13_G16_s20180102000410.tiff")
+print(rtr)
+```
+
+```
+## class      : RasterLayer 
+## dimensions : 1171, 1101, 1289271  (nrow, ncol, ncell)
+## resolution : 0.018793393, 0.018793393  (x, y)
+## extent     : -84.70616, -64.014634, -19.98902, 2.0180434  (xmin, xmax, ymin, ymax)
+## crs        : +proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0 
+## source     : C:/Users/usuario/Documents/Clases/R/Clase_3/data/PE_OR_ABI-L2-CMIPF-M3C13_G16_s20180102000410.tiff 
+## names      : PE_OR_ABI.L2.CMIPF.M3C13_G16_s20180102000410 
+## values     : -32768, 32767  (min, max)
+```
+
+---
+[//]: &lt;&gt; (18)
+
+Lo que tenemos es un RasterLayer (pueden chequearlo con `class(rtr)`). 
+
+RasterLayer es un tipo de estructura, por lo que podemos ver su contenido con `str()`.
+
+--
+
+Prueben...
+
+
+```r
+str(rtr)
+```
+
+--
+
+![wtf](https://i.pinimg.com/236x/a6/d1/91/a6d191ef9868d55319eda58f15b20858--wolves-running.jpg)
+
+---
+[//]: &lt;&gt; (19)
+
+Se que había muchas chucherías ahí pero no se preocupen, muchos de esos datos se le conoce como atributos. Un RasterLayer es en esencia una matriz con información adicional.
+
+--
+
+Mejor veámoslo en una gráfica!
+
+
+```r
+plot(rtr, axes = T)
+```
+
+&lt;img src="clase_3_files/figure-html/unnamed-chunk-15-1.png" width="50%" /&gt;
+
+---
+[//]: &lt;&gt; (20)
+
+"...y podemo juntarlo con el shape que cargamos antes?"
+
+--
+
+.center[
+&lt;img src="https://pbs.twimg.com/media/D0H3oCzXgAAZdXR.jpg" width="40%" /&gt;
+]
+
+---
+[//]: &lt;&gt; (21)
+
+
+```r
+dep = st_read("data/shapes/departamentos_geo.shp", quiet = T)
+plot(rtr, axes = T, col = heat.colors(64))
+plot(dep$geometry, add = T)
+```
+
+&lt;img src="clase_3_files/figure-html/unnamed-chunk-17-1.png" width="60%" /&gt;
+
+---
+[//]: &lt;&gt; (22)
+
+Hagamos un pequeño recorte sobre Junin y cambiemos un poco los valores.
+
+
+```r
+dep = st_read("data/shapes/departamentos_geo.shp", quiet = T)
+rtr2 = crop(rtr, extent(-77, -73, -13.5, -10)) 
+*rtr2 = (rtr2 - mean(rtr2)) / sd(rtr2)
+plot(rtr2, axes = T, col = heat.colors(64))
+plot(dep$geometry, add = T)
+```
+
+--
+
+.small[uhhh... error?]
+
+![error](https://netplus.agency/wp-content/uploads/2018/04/angry-programmer.gif)
+
+---
+[//]: &lt;&gt; (23)
+
+Para aplicar funciones a la matriz, es necesario indicar que vamos a trabajar con la matriz, no con el RasterLayer.
+
+
+```r
+dep = st_read("data/shapes/departamentos_geo.shp", quiet = T)
+rtr2 = crop(rtr, extent(-77, -73, -13.5, -10)) 
+*rtr2 = (rtr2 - mean(rtr2[])) / sd(rtr2[])
+plot(rtr2, axes = T)
+plot(dep$geometry, add = T)
+```
+
+&lt;img src="clase_3_files/figure-html/unnamed-chunk-19-1.png" width="45%" /&gt;
+
+---
+[//]: &lt;&gt; (24)
+
+class: middle
+
+Y bueno, se pueden hacer muchas más cosas, pero para una introducción es más que suficiente. Las imágenes raster son fáciles de manejar.
+
+---
+[//]: &lt;&gt; (25)
+
+layout: false
+class: inverse, center, middle
+
+### Ejercicio 2
+
+Bueno bueno, de seguro se están preguntando *¿qué cha es esa imagen que acabamos de usar?*. Resulta que es una imagen de la temperatura en el tope de la nubes para zona del Perú del satelite GOES 16. Pero esa escala de valores era cualquier cosa menos temperatura ¿cierto? Bueno su chamba será arreglar la imagen satelital.
+
+Para arreglar la imagen, primero es necesario multiplicarlo por 0.0614533 y luego sumarle 89.62, con eso obtendremos los valores en Kelvin. 
+
+Ahora, transformen la imagen a temperatura y muestren el resultado sobre Ayacucho.
+
+.
+
+.footnotesize[Nota: Los meteorólogos usamos la temperatura de brillo de las nubes como un indicador de la presencia de lluvias. Más frío, más probable que esté lloviendo.]
+
+---
+
+layout: true
+
+## Información grillada.
+
+---
+[//]: &lt;&gt; (26)
+
+Veremos dos tipos de información grillada.
+
+- Archivos netCDF.
+
+- Archivos grib (1 y 2).
+
+Empecemos por el archivo netCDF
+
+---
+[//]: &lt;&gt; (27)
+
+Primero, leamos el archivo ERA5_2018.nc y vemos lo que tiene
+
+
+```r
+library(ncdf4)
+era = nc_open("data/ERA5_2018.nc")
+print(era)
+```
+
+```
+## File data/ERA5_2018.nc (NC_FORMAT_64BIT):
+## 
+##      2 variables (excluding dimension variables):
+##         short r[longitude,latitude,level,time]   
+##             scale_factor: 0.00185084043537181
+##             add_offset: 62.7191787973116
+##             _FillValue: -32767
+##             missing_value: -32767
+##             units: %
+##             long_name: Relative humidity
+##             standard_name: relative_humidity
+##         short t[longitude,latitude,level,time]   
+##             scale_factor: 0.00177907868779792
+##             add_offset: 258.534457445519
+##             _FillValue: -32767
+##             missing_value: -32767
+##             units: K
+##             long_name: Temperature
+##             standard_name: air_temperature
+## 
+##      4 dimensions:
+##         longitude  Size:1440
+##             units: degrees_east
+##             long_name: longitude
+##         latitude  Size:721
+##             units: degrees_north
+##             long_name: latitude
+##         level  Size:4
+##             units: millibars
+##             long_name: pressure_level
+##         time  Size:12
+##             units: hours since 1900-01-01 00:00:00.0
+##             long_name: time
+##             calendar: gregorian
+## 
+##     2 global attributes:
+##         Conventions: CF-1.6
+##         history: 2019-06-05 23:11:07 GMT by grib_to_netcdf-2.10.0: /opt/ecmwf/eccodes/bin/grib_to_netcdf -o /cache/data5/adaptor.mars.internal-1559776254.8207502-19734-9-75b68254-3852-4ec5-a63e-726b8c94bf25.nc /cache/tmp/75b68254-3852-4ec5-a63e-726b8c94bf25-adaptor.mars.internal-1559776254.8212636-19734-1-tmp.grib
+```
+
+---
+[//]: &lt;&gt; (28)
+
+Ok ok, que no cunda el panico! Es mucha información, pero es importante prestarle atención ya que en ella encontraremos el nombre de las dimensiones y las variables. Resulta que los archivos netCDF tiene oooooootro tipo de estructura.
+
+.pull-left[
+![vari](libs/img/vari.png)
+]
+
+.pull-right[
+![dimen](libs/img/dimen.png)
+]
+
+---
+[//]: &lt;&gt; (29)
+
+Probemos leyendo todo lo que tiene el archivo. Es información mensual del 2018 de temperatura y humedad relativa para 4 niveles de la atmósfera.
+
+
+```r
+era = nc_open("data/ERA5_2018.nc")
+temp = ncvar_get(era, "t")
+hr = ncvar_get(era, "r")
+lon = ncvar_get(era, "longitude")
+lat = ncvar_get(era, "latitude") 
+lev = ncvar_get(era, "level") 
+time = ncvar_get(era, "time") 
+```
+
+--
+
+¿Cuál es su estructura?
+
+Prueben con `str()` y `dim()`
+
+---
+[//]: &lt;&gt; (30)
+
+Recortemos la data para Perú, el procedimiento no es tan directo como el que hizo con el raster (hay que hacerlo a la antigua). También seleccionaremos solo el nivel de 1000 hPa y el segundo mes.
+
+
+```r
+*lon = lon - 360
+setlon = lon &gt;= -84 &amp; lon &lt;= -66
+setlat = lat &gt;= -20 &amp; lat &lt;= 2
+setlev = lev == 1000
+settim = 2
+lon = lon[setlon]
+lat = lat[setlat]
+temp = temp[setlon, setlat, setlev, settim] - 273.15
+```
+
+--
+
+Ahora, hay un pequeño detalle con la latitud, ¿pueden darse cuenta de cuál es?
+
+---
+[//]: &lt;&gt; (31)
+
+Antes de graficar, necesitamos invertir las latitudes.
+
+.bold[Siempre fíjense de eso!]
+
+
+```r
+lat = lat[length(lat):1]
+temp = temp[ ,length(lat):1]
+```
+
+
+```r
+image(x = lon, y = lat, z = temp)
+```
+
+&lt;img src="clase_3_files/figure-html/unnamed-chunk-24-1.png" width="40%" /&gt;
+
+---
+[//]: &lt;&gt; (32)
+
+"...como que la gráfica esta medio moncefú ¿no?"
+
+Probemos con `library(fields)` aer si nos da una mejor opción.
+
+
+```r
+fields::image.plot(x = lon, y = lat, z = temp)
+```
+
+&lt;img src="clase_3_files/figure-html/unnamed-chunk-25-1.png" width="50%" /&gt;
+
+---
+[//]: &lt;&gt; (33)
+
+"...si, ta mejor. Se le puede poner los departamentos como hicimos con el raster"
+
+Todo es posible! .tiny[menos que apruebes tus finales :v]
+
+--
+
+
+```r
+dep = sf::st_read("data/shapes/departamentos_geo.shp", quiet = T)
+fields::image.plot(x = lon, y = lat, z = temp)
+plot(dep$geometry, add = T)
+```
+
+&lt;img src="clase_3_files/figure-html/unnamed-chunk-26-1.png" width="40%" /&gt;
+
+---
+[//]: &lt;&gt; (34)
+
+"...no me gusta que esté así cuadriculado. ¿No hay otra forma de graficarlo?"
+
+Bueno, si y no. Existe el comando `filled.contour()`, pero cuando lo intentamos juntar con el mapa del departamento, cosas raras salen.
+
+--
+
+
+```r
+filled.contour(x = lon, y = lat, z = temp)
+plot(dep$geometry, add = T)
+```
+
+&lt;img src="clase_3_files/figure-html/unnamed-chunk-27-1.png" width="40%" /&gt;
+
+---
+[//]: &lt;&gt; (35)
+
+"...y ahora? :'("
+
+--
+
+Felizmente, dentro del script `Meteorite.r` existen funciones que permiten hacer este procedimiento.
+
+
+```r
+source("data/Meteorite.r")
+dep = sf::st_read("data/shapes/departamentos_geo.shp", quiet = T)
+filled.contour.plot(x = lon, y = lat, z = temp)
+plot(dep$geometry, add = T)
+```
+
+&lt;img src="clase_3_files/figure-html/unnamed-chunk-28-1.png" width="40%" /&gt;
+
+---
+[//]: &lt;&gt; (36)
+
+El script `Meteorite.r` tiene muchas más funciones para trabajar información grillada, pero las utilizaremos más a fondo la próxima clase. Por hoy, solo tenemos que familiarizarnos con los datos.
+
+.center[
+![bob](https://cdn.konbini.com/wp-content/blogs.dir/8/files/2018/03/spongebob-480x279.jpg)
+]
+
+---
+[//]: &lt;&gt; (37)
+
+layout: false
+class: inverse, center, middle
+
+###Ejercicio 3
+
+Bueno ahora juguemos con la data de humedad relativa. Primero ubíquense sobre Lima. Ahora comparen la humedad relativa a 1000 hPa (superficie)  y a 500 hPa (niveles medios) para un mes de verano y otro de invierno. ¿Que diferencias encuentran?
+
+Junten todo el procedimiento en un script.
+
+---
+
+layout: true
+
+## Información grillada
+
+---
+[//]: &lt;&gt; (38)
+
+Ahora veremos los archivos grib con `library(rNOMADS)`... masomenos...
+
+--
+
+Aun con el paquete `rNOMADS`, R no es capaz de leer información grib. Es necesario instalar otro programita antes, pero no veremos eso ahora.
+
+Lo que si nos permite `rNOMADS` es conectarnos al servidor de la NOAA para leer y descargar datos de pronósticos!
+
+---
+[//]: &lt;&gt; (39)
+
+.bolder[¡Tengan cuidado!]
+
+Todo lo que haremos a continuación requiere conexión a internet. Ya que estamos familiarizados con la información grillada, correré un poco.
+
+Pueden seguir los ejemplos si desean, pero la idea es que lo repliquen en sus casas con una conexión estable... 
+--
+a menos que sean pitucos y quieren gastar sus datos. 
+
+tiny.[compartan pe :'v]
+
+---
+[//]: &lt;&gt; (40)
+
+Accederemos a pronósticos de 0.5 grados de resolución espacial.
+
+
+```r
+library(rNOMADS)
+
+# Obteniendo modelo
+urls.out = GetDODSDates(abbrev = "gfs_0p50")
+model.url = tail(urls.out$url, 1)
+
+# Obteniendo la corrida más reciente
+model.runs = GetDODSModelRuns(model.url)
+model.run = tail(model.runs$model.run, 1)
+
+# Veamos temperatura para las siguientes 6 horas y 1000 hPa
+variable = "tmpprs"
+time = c(2,2)
+lev = c(1,1) # 1000 hPa
+
+# Seleccionando coordenadas
+lon.dom &lt;- seq(0, 360, by = 0.5)
+lat.dom &lt;- seq(-90, 90, by = 0.5)
+lon &lt;- which((lon.dom &gt;= 360 - 84) &amp; (lon.dom &lt;= 360 - 66)) - 1
+lat &lt;- which((lat.dom &lt;= 2) &amp; (lat.dom &gt;= -20)) - 1
+```
+
+---
+[//]: &lt;&gt; (41)
+
+
+```r
+# Leyendo datos
+data = DODSGrab(model.url, model.run, variable, time, c(min(lon), max(lon)), c(min(lat), max(lat)), lev = lev)
+```
+
+```
+## [1] "https://nomads.ncep.noaa.gov:9090/dods/gfs_0p50/gfs20190608/gfs_0p50_00z.ascii?tmpprs[2:2][1:1][140:184][552:588]"
+```
+
+```r
+# Convirtiendolo en grilla
+grilla = ModelGrid(data, c(0.5, 0.5))
+
+# Chequeando el resultaddo
+str(grilla)
+```
+
+```
+## List of 7
+##  $ z             : num [1, 1, 1:37, 1:45] 287 287 287 287 287 ...
+##  $ x             : num [1:37] 276 276 277 278 278 ...
+##  $ y             : num [1:45] -20 -19.5 -19 -18.5 -18 -17.5 -17 -16.5 -16 -15.5 ...
+##  $ variables     : chr "tmpprs"
+##  $ levels        : num 975
+##  $ model.run.date: chr "20190608gfs_0p50_00z"
+##  $ fcst.date     : POSIXlt[1:1], format: "2019-06-08 06:00:00"
+```
+
+---
+[//]: &lt;&gt; (42)
+
+Ahora vamos a graficar el resultado
+
+
+```r
+source("data/Meteorite.r")
+dep = sf::st_read("data/shapes/departamentos_geo.shp", quiet = T)
+filled.contour.plot(x = grilla$x - 360, y = grilla$y, z = grilla$z[1,1,,])
+plot(dep$geometry, add = T, border = "grey20")
+contour(x = grilla$x - 360, y = grilla$y, z = grilla$z[1,1,,], add = T)
+```
+
+&lt;img src="clase_3_files/figure-html/unnamed-chunk-31-1.png" width="40%" /&gt;
+
+---
+[//]: &lt;&gt; (43)
+
+layout: false
+class: inverse, center, middle
+
+# Ejercicio pa' la casa
+
+Bueno, para ver si lo último quedó claro deberán hacer un script que lea la data de pronósticos de la NOAA y muestre la precipitación acumulada de las próximas 12 horas para la selva del Perú.
+
+.small[Consejo: La información de precipitación no tiene nievels de presión, por lo que la variable `lev` no la van a utilizar]
+ 
+---
+
+class: inverse, center, middle
+
+# Gracias por aguantarme!
+
+Si tienen dudas pueden escribirme a: dante.tcg@gmail.com
+
+Las clases pueden encontrarlas en
+
+&lt;https://danteca.github.io/&gt;
+
+Chau!
+
+![bye](https://i.imgur.com/e8a5w9s.gif)
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"countIncrementalSlides": false,
+"highlightLines": true
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();</script>
+
+<script>
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
