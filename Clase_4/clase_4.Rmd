@@ -1,0 +1,827 @@
+---
+title: "R Aplicado a la Meteorología - Básico"
+subtitle: "Clase 4 - Aplicaciones xvrs"
+author: "Dante Castro Garro"
+date: "2019-06-15"
+output: 
+  xaringan::moon_reader:
+    css: ["default", "default-fonts", "hygge"]
+    lib_dir: libs
+    nature:
+      highlightStyle: github
+      countIncrementalSlides: false
+      highlightLines: true
+---
+[//]: <> (2)
+
+```{r setup, include = FALSE}
+options(htmltools.dir.version = FALSE, stringsAsFactors = FALSE)
+library(metR)
+library(cowplot)
+library(ncdf4)
+library(dplyr)
+```
+
+# Índice
+
+### Hoy aplicaremos las 3 clases pasadas para analizar un friaje. Para ello, desarrollarmos un código eficiente y que genere resultados de buena calidad. El análisis se dividirá en 3 partes.
+
+--
+
+1. Análisis de información de estaciones (tablas).
+
+--
+
+2. Análisis sinóptico (data grillada).
+
+--
+
+3. Cosillas adicionales.
+
+.tiny[*no se me van hasta que terminen malditos*]
+
+---
+
+layout: true
+
+### Parte I
+
+---
+[//]: <> (3)
+
+class: inverse, center, middle
+
+*Análisis de estaciones*
+
+---
+[//]: <> (4)
+
+Bueno, empecemos cargando la base de datos de las estaciones. Son dos archivos, uno contiene la información de precipitación, temperatura máxima y temperatura mínima; mientras que el otro contiene la metadata de las estaciones.
+
+```{r, eval = T}
+options(stringsAsFactors = F) # Para que no j0d@n los benditos factores #<<
+
+dato = read.csv("Data/consolidado_total.csv")
+meta = read.csv("Data/metadata.csv")
+```
+
+---
+[//]: <> (5)
+
+Muy bien, con la data cargada, seleccionemos solo una estación y vemos su contenido. Eligiré la estación con el código 387 (una estación aleatoria).
+
+```{r, eval = T}
+stn = dplyr::filter(dato, Codigo == 387)
+head(stn)
+```
+
+---
+[//]: <> (6)
+
+Bien bien, ya que en esta clase nos enfocaremos en la parte gráfica, veamos el comportamiento de la temperatura mínima con [ggplot2!](https://ggplot2.tidyverse.org/reference/)
+
+```{r, eval = F}
+library(cowplot) # o también con ggplot2
+
+serie = ggplot(stn, aes(y = Tmin, x = 1:nrow(stn))) +
+	geom_point()
+    
+plot(serie)
+```
+
+---
+[//]: <> (7)
+
+```{r, eval = T, echo = F}
+library(cowplot) # o también con ggplot2
+serie = ggplot(stn, aes(y = Tmin, x = 1:nrow(stn))) +
+	geom_point()
+    
+plot(serie)
+```
+
+---
+[//]: <> (8)
+
+Si queremos agregar o modificar cosas a la gráfica, lo hacemos colocando un "+" seguido de la función que deseemos. Provemos ahora con lineas azules y modificando el grillado.
+
+```{r, eval = F}
+serie = ggplot(stn, aes(y = Tmin, x = 1:nrow(stn))) +
+	geom_line(colour = "dodgerblue") +
+	theme(panel.grid.major = element_line(colour = "grey85"))
+    
+plot(serie)
+```
+
+---
+[//]: <> (9)
+
+```{r, eval = T, echo = F, out.width = "50%"}
+serie = ggplot(stn, aes(y = Tmin, x = 1:nrow(stn))) +
+	geom_line(colour = "dodgerblue") +
+	theme(panel.grid.major = element_line(colour = "grey85"))
+    
+plot(serie)
+```
+
+Prueben ustedes con otra variable u otra estación si quieren! Al final, el procedimiento será el mismo, pero tal vez tengan resultados distintos
+
+---
+[//]: <> (10)
+
+¿Y si queremos saber dónde carajos está la estación que elegimos? Con ggplot se puede hacer facilito noma!
+
+```{r, eval = F}
+dep = sf::st_read("Data/Shapes/departamento_geo.shp", quiet = T)
+dep = sf::as_Spatial(dep)
+meta = mutate(meta, Sel = ifelse(Codigo == 387, "387", "No"))
+mapa = ggplot() +
+	geom_polygon(data = dep, aes(x = long, y = lat, group = group)) +
+	geom_point(data = meta, aes(x = Lon, y = Lat, colour = Sel))
+    
+plot(mapa)
+```
+
+---
+[//]: <> (11)
+
+```{r, eval = T, echo = F}
+dep = sf::st_read("Data/Shapes/departamento_geo.shp", quiet = T)
+dep = sf::as_Spatial(dep)
+meta = mutate(meta, Sel = ifelse(Codigo == 387, "387", "No"))
+mapa = ggplot() +
+	geom_polygon(data = dep, aes(x = long, y = lat, group = group)) +
+	geom_point(data = meta, aes(x = Lon, y = Lat, colour = Sel))
+    
+plot(mapa)
+```
+
+---
+[//]: <> (12)
+
+Ahora que ya tenemos nuestra estación, pasemos a buscar los friajes.
+
+--
+
+Hay diferentes formas, pero hagamos lo siguiente:
+
+--
+
+1. Determinemos la temperatura más baja de cada año.
+
+--
+
+2. Calculemos el promedio y desviación estándar de estos valores.
+
+--
+
+3. Usaremos la desviación estándar para determinar la intensidad de los eventos.
+
+--
+
+4. Buscaremos todos los días con temperatura menor a la media que calculamos, estos serán nuestros eventos.
+
+--
+
+5. Para este ejercicio, usaremos solo una fecha de friaje. Lo ideal sería analizar todos según su intensidad.
+
+--
+
+*¿Cómo lo harían?*
+
+```{r, echo = F, out.width = "15%"}
+knitr::include_graphics("libs/img/khe.jpg")
+```
+
+---
+[//]: <> (13)
+
+Paso 0
+
+Antes que nada, acomodemos un poco los datos. Generemos una conlumna con la fecha y otra adicional, pero algo rara. No se preocupen, lo usaremos más adelante.
+
+```{r, eval = T}
+stn = mutate(stn,
+	Fecha = as.Date(paste(Anio,Mes,Dia, sep = "-")),
+	Juliano = as.Date(paste(1990,Mes,Dia, sep = "-"))
+	)
+```
+ 
+---
+[//]: <> (14)
+
+Paso 1
+
+Como tenemos que encontrar los valores mínimos en cada año, lo lógico sería agupar por años y luego usar la función `min()`.
+
+Debido a que en 1994 no hay datos y en el 2014 hay un valor bien raro, solo seleccionaré años entre 1995 y 2013.
+
+--
+
+```{r, eval = T}
+stn = filter(stn, Anio %in% 1995:2013)
+stn_ano = group_by(stn, Anio)
+min_ano = summarize(stn_ano, Min = min(Tmin, na.rm = T))
+```
+
+---
+[//]: <> (15)
+
+Paso 2
+
+Ahora viene un promedio y desviación simple.
+
+--
+
+```{r, eval = T}
+media = mean(min_ano$Min)
+desvi = sd(min_ano$Min)
+```
+
+---
+[//]: <> (16)
+
+Paso 3
+
+La desviación estándar podríamos usarlo para usar las categorias.
+
+--
+
+```{r, eval = T}
+umb_mode = media - 0.5*desvi
+umb_inte = media - 1.0*desvi
+umb_mint = media - 1.5*desvi
+```
+
+---
+[//]: <> (17)
+
+Paso 4
+
+Ahora a encontrar los eventos. La mejor forma de verlos es con una gráfica! .small[ta que por fin]
+
+--
+
+```{r, eval = T}
+stn = filter(stn, Mes %in% 5:9)
+
+con_leve = which(stn$Tmin <= media & stn$Tmin > umb_mode)
+con_mode = which(stn$Tmin <= umb_mode & stn$Tmin > umb_inte)
+con_inte = which(stn$Tmin <= umb_inte & stn$Tmin > umb_mint)
+con_mint = which(stn$Tmin <= umb_mint)
+
+stn$Categoria = NA
+stn$Categoria[con_leve] = "Leve"
+stn$Categoria[con_mode] = "Moderado"
+stn$Categoria[con_inte] = "Intenso"
+stn$Categoria[con_mint] = "Muy intenso"
+stn$Categoria = factor(
+	stn$Categoria, 
+	levels = c("Leve", "Moderado", "Intenso", "Muy intenso")
+)
+```
+
+.tiny[oe, y la gráfica?]
+
+---
+[//]: <> (18)
+
+Paso 4.1
+
+Ya ya, calmaaa .Large[!CALMA!]
+--
+, primero necesitabamos poner las categorías. Ahora si la gráfica, esta en específica se llama `heatmap`, ¿lo conoces?
+
+--
+
+```{r, eval = F}
+library(cowplot)
+
+cols1 = c(
+	"Leve" = "skyblue", 
+	"Moderado" = "dodgerblue", 
+	"Intenso" = "darkviolet", 
+	"Muy intenso" = "deeppink"
+)
+
+hea = ggplot(stn, aes(x = Juliano, y = Anio, fill = Categoria)) +
+	geom_tile() +
+	scale_x_date(date_labels = "%b %d") +
+	scale_fill_manual(values = cols1) +
+	scale_y_reverse() +
+	labs(x = "", y = "Año") +
+	background_grid(major = "xy")
+
+plot(hea)
+```
+
+---
+[//]: <> (19)
+
+```{r, eval = T, echo = F}
+library(cowplot)
+
+cols1 = c(
+	"Leve" = "skyblue", 
+	"Moderado" = "dodgerblue", 
+	"Intenso" = "darkviolet", 
+	"Muy intenso" = "deeppink"
+)
+
+hea = ggplot(stn, aes(x = Juliano, y = Anio, fill = Categoria)) +
+	geom_tile() +
+	scale_x_date(date_labels = "%b %d") +
+	scale_fill_manual(values = cols1) +
+	scale_y_reverse() +
+	labs(x = "", y = "Año") +
+	background_grid(major = "xy")
+
+plot(hea)
+```
+
+---
+[//]: <> (20)
+
+Paso 5
+
+Ahora seleccionemos una fecha. Como mencioné , lo ideal sería trabajar con varias fechas, pero por ahora una es sufi. En mi caso será el 1999-08-17.
+
+--
+
+Junto al evento que seleccionemos, también seleccionaremos 7 días antes y 7 días despúes para ver como se desarrolla el evento.
+
+--
+
+```{r, eval = F}
+a = as.Date("1999-08-17")
+evento = filter(stn, Fecha %in% (a-7):(a+7))
+ser = ggplot(evento, aes(x = Fecha, y = Tmin)) +
+	geom_line()
+
+plot(ser)
+```
+
+---
+[//]: <> (21)
+
+```{r, eval = T, echo = F}
+a = as.Date("1999-08-17")
+evento = filter(stn, Fecha %in% (a-7):(a+7))
+ser = ggplot(evento, aes(x = Fecha, y = Tmin)) +
+	geom_line()
+
+plot(ser)
+```
+
+---
+[//]: <> (22)
+layout: false
+class: inverse, center, middle
+
+### Parte II
+
+Análisis sinóptico
+
+---
+[//]: <> (23)
+
+class: inverse, center, middle
+
+### Usaremos el paquete [`metR`](https://eliocamp.github.io/metR/index.html)
+
+Hecho por mi papi, mi riqui, mi rey.
+
+*Elio Campitelli*
+
+```{r, echo = F, out.width = "30%"}
+knitr::include_graphics("libs/img/elio.jpg")
+```
+
+---
+
+layout:true
+
+### Parte II
+
+---
+[//]: <> (24)
+
+Ahora la idea es ver cómo se comportó la atmósfera, y lo haremos de la siguiente manera:
+
+--
+
+1. Buscar la fecha de nuestro evento.
+
+--
+
+2. Graficar el comportamiento del viento meridional para todas la fechas.
+
+--
+
+3. Pos... analizar no?
+
+```{r, echo = F, out.width = "15%"}
+knitr::include_graphics("libs/img/derp.png")
+```
+
+---
+[//]: <> (25)
+
+Paso 1
+
+Primero lo primero, seleccionar la data... algo que resultó engorroso la clase pasada cierto?
+--
+ Bueno, eso era importante para que entiendan qué es lo que se hace.
+ 
+Ahora, mi papi, mi ricky, mi rey, creó `metR` que hace esa chamba muuucho más sencilla.
+
+--
+
+```{r, eval = T}
+library(metR)
+
+v = ReadNetCDF("Data/vwnd.1999.nc",
+	subset = list(
+		lon = 260:340, 
+		lat = -70:15, 
+		level = 250, 
+		time = as.POSIXct("1999-08-10"):as.POSIXct("1999-08-24")
+	)
+)
+v$lon = v$lon - 360
+```
+
+---
+[//]: <> (26)
+
+Una chequeada a la data
+
+```{r, eval = T}
+print(v)
+```
+
+---
+[//]: <> (27)
+
+Paso 2
+
+Ahora grafiquemos la data, ¿se acuerdan de "a"?
+
+```{r, eval = F}
+vsub = dplyr::filter(v, time == a)
+sinop = ggplot(vsub, aes(lon, lat, z = vwnd)) +
+	geom_contour_fill() +
+	scale_fill_divergent() +
+	scale_x_longitude() +
+	scale_y_longitude() +
+	coord_fixed(xlim = c(-100, -20), ylim = c(-70, 5)) +
+	borders()
+
+plot(sinop)
+```
+
+---
+[//]: <> (28)
+
+```{r, eval = T, echo = F}
+vsub = dplyr::filter(v, time == as.Date("1999-08-17"))
+sinop = ggplot(vsub, aes(lon, lat, z = vwnd)) +
+	geom_contour_fill() +
+	scale_fill_divergent() +
+	scale_x_longitude() +
+	scale_y_longitude() +
+	ggtitle(a) +
+	coord_fixed(xlim = c(-100, -20), ylim = c(-70, 5)) +
+	borders()
+
+plot(sinop)
+```
+
+---
+[//]: <> (29)
+
+Paso 2.1
+
+Pero, se supone que son 15 días, ¿Cómo cha hacemos?
+
+--
+
+```{r, eval = F}
+fec = as.Date( (a-7):(a+7), origin = "1970-01-01" )
+
+for(i in 1:length(fec)){
+
+	aer = fec[i]
+	
+	vsub = dplyr::filter(v, time == aer)
+	
+	sinop = ggplot(vsub, aes(lon, lat, z = vwnd)) +
+		geom_contour_fill() +
+		scale_fill_divergent() +
+		scale_x_longitude() +
+		scale_y_longitude() +
+		ggtitle(aer) +
+		coord_fixed(xlim = c(-100, -20), ylim = c(-70, 5)) +
+		borders() +
+		panel_border(colour = "black")
+
+	sal = paste0("vwnd_", aer, ".png")
+	ggsave(sal, plot = sinop)
+	
+}
+```
+
+---
+[//]: <> (30)
+
+Parte 3
+
+Ahora, analicemos que cha pasó.
+
+```{r, echo = F}
+knitr::include_graphics("libs/img/thinking_cup_guy.jpg")
+```
+
+---
+[//]: <> (31)
+
+layout: false
+class: inverse, center, middle
+
+## Veamos que otras cosas podemos hacer con el metR
+
+---
+[//]: <> (32)
+
+Veamos contornos encima de los colores.
+
+```{r, eval = F}
+new = ggplot(vsub, aes(lon, lat, z = vwnd)) +
+	geom_contour_fill() +
+	geom_contour2(color = "black") +
+	geom_text_contour(stroke = 0.2) +
+	scale_fill_divergent() +
+	scale_x_longitude() +
+	scale_y_latitude() +
+	coord_fixed(xlim = c(-100, -20), ylim = c(-70, 5)) +
+	borders() +
+	panel_border(colour = "black")
+
+plot(new)
+```
+
+---
+[//]: <> (33)
+
+```{r, eval = T, echo = F}
+new = ggplot(vsub, aes(lon, lat, z = vwnd)) +
+	geom_contour_fill() +
+	geom_contour2(color = "black") +
+	geom_text_contour(stroke = 0.2) +
+	scale_fill_divergent() +
+	scale_x_longitude() +
+	scale_y_latitude() +
+	coord_fixed(xlim = c(-100, -20), ylim = c(-70, 5)) +
+	borders() +
+	panel_border(colour = "black")
+
+plot(new)
+```
+
+---
+[//]: <> (34)
+
+Ahora los contornos de Tanaka!
+
+```{r, eval = F}
+new = ggplot(vsub, aes(lon, lat, z = vwnd)) +
+	geom_contour_fill() +
+	geom_contour_tanaka() +
+	scale_fill_divergent() +
+	scale_x_longitude() +
+	scale_y_latitude() +
+	coord_fixed(xlim = c(-100, -20), ylim = c(-70, 5)) +
+	borders() +
+	panel_border(colour = "black")
+
+plot(new)
+```
+
+---
+[//]: <> (35)
+
+```{r, eval = T, echo = F}
+new = ggplot(vsub, aes(lon, lat, z = vwnd)) +
+	geom_contour_fill() +
+	geom_contour_tanaka() +
+	scale_fill_divergent() +
+	scale_x_longitude() +
+	scale_y_latitude() +
+	coord_fixed(xlim = c(-100, -20), ylim = c(-70, 5)) +
+	borders() +
+	panel_border(colour = "black")
+
+plot(new)
+```
+
+---
+[//]: <> (36)
+
+Bueno, veamos vectores ahora. Primero calcularemos la velocidad resultante para complementar mejor las gráficas.
+
+```{r, eval = T}
+source("Data/Meteorite_dev.r")
+
+u = ReadNetCDF("Data/uwnd.1999.nc",
+	subset = list(
+		lon = 260:340, 
+		lat = -70:15, 
+		level = 250, 
+		time = as.POSIXct("1999-08-10"):as.POSIXct("1999-08-24")
+	)
+)
+u$lon = u$lon - 360
+
+uv = u
+uv$vwnd = v$vwnd
+uv$vel = magx(u$uwnd, v$vwnd)
+
+uv = dplyr::filter(uv, time == a)
+```
+
+---
+[//]: <> (37)
+
+Ya, grafiquemos vectores!
+
+```{r, eval = F}
+library(RColorBrewer)
+
+new = ggplot(uv, aes(lon, lat)) +
+	geom_contour_fill(aes(z = vel)) +
+	geom_vector(aes(dx = uwnd, dy = vwnd)) +
+	scale_fill_gradientn(colors = brewer.pal(8, "YlGn")) +
+	scale_mag() +
+	scale_x_longitude(ticks = 30) +
+	scale_y_latitude(ticks = 30) +
+	coord_fixed(xlim = c(-100, -20), ylim = c(-70, 5)) +
+	borders() +
+	panel_border(colour = "black")
+
+plot(new)
+```
+
+---
+[//]: <> (38)
+
+```{r, eval = T, echo = F}
+library(RColorBrewer)
+
+new = ggplot(uv, aes(lon, lat)) +
+	geom_contour_fill(aes(z = vel)) +
+	geom_vector(aes(dx = uwnd, dy = vwnd)) +
+	scale_fill_gradientn(colors = brewer.pal(8, "YlGn")) +
+	scale_mag() +
+	scale_x_longitude(ticks = 30) +
+	scale_y_latitude(ticks = 30) +
+	coord_fixed(xlim = c(-100, -20), ylim = c(-70, 5)) +
+	borders() +
+	panel_border(colour = "black")
+
+plot(new)
+```
+
+---
+[//]: <> (39)
+
+También se puede líneas de corriente .small[ya fue el GrADS]
+
+```{r, eval = F}
+library(RColorBrewer)
+
+new = ggplot(uv, aes(lon, lat)) +
+	geom_contour_fill(aes(z = vel)) +
+	geom_streamline(
+		aes(dx = uwnd, dy = vwnd), 
+		L = 12, 
+		res = 5, 
+		arrow.length = 0.3) +
+	scale_fill_gradientn(colors = brewer.pal(8, "YlGn")) +
+	scale_mag() +
+	scale_x_longitude() +
+	scale_y_latitude() +
+	coord_fixed(xlim = c(-100, -20), ylim = c(-70, 5)) +
+	borders() +
+	panel_border(colour = "black")
+
+plot(new)
+```
+
+---
+[//]: <> (40)
+
+```{r, eval = T, echo = F}
+library(RColorBrewer)
+
+new = ggplot(uv, aes(lon, lat)) +
+	geom_contour_fill(aes(z = vel)) +
+	geom_streamline(
+		aes(dx = uwnd, dy = vwnd), 
+		L = 12, 
+		res = 5, 
+		arrow.length = 0.3) +
+	scale_fill_gradientn(colors = brewer.pal(8, "YlGn")) +
+	scale_mag() +
+	scale_x_longitude() +
+	scale_y_latitude() +
+	coord_fixed(xlim = c(-100, -20), ylim = c(-70, 5)) +
+	borders() +
+	panel_border(colour = "black")
+
+plot(new)
+```
+
+---
+[//]: <> (41)
+
+Ahora un poco más pro
+
+```{r, eval = F}
+library(viridis)
+
+new = ggplot(uv, aes(lon, lat)) +
+	geom_streamline(
+		aes(
+			dx = uwnd, 
+			dy = vwnd, 
+			size = ..step..,
+			alpha = ..step..,
+			color = sqrt(..dx..^2 + ..dy..^2)),
+		L = 10, res = 2, arrow = NULL, lineend = "round") +
+	labs(color = "m/s") +
+	scale_color_viridis() +
+	scale_x_longitude() +
+	scale_y_latitude() +
+	scale_size(range = c(0,1), guide = "none") +
+	scale_alpha(guide = "none") +
+	coord_fixed(xlim = c(-100, -20), ylim = c(-70, 5)) +
+	borders() +
+	panel_border(colour = "black")
+
+plot(new)
+```
+
+---
+[//]: <> (42)
+
+```{r, eval = T, echo = F}
+library(viridis)
+
+new = ggplot(uv, aes(lon, lat)) +
+	geom_streamline(
+		aes(
+			dx = uwnd, 
+			dy = vwnd, 
+			size = ..step..,
+			alpha = ..step..,
+			color = sqrt(..dx..^2 + ..dy..^2)),
+		L = 10, res = 2, arrow = NULL, lineend = "round") +
+	labs(color = "m/s") +
+	scale_color_viridis() +
+	scale_x_longitude() +
+	scale_y_latitude() +
+	scale_size(range = c(0,1), guide = "none") +
+	scale_alpha(guide = "none") +
+	coord_fixed(xlim = c(-100, -20), ylim = c(-70, 5)) +
+	borders() +
+	panel_border(colour = "black")
+
+plot(new)
+```
+
+---
+[//]: <> (43)
+
+class: center, middle
+
+## Y bueno, hay más cosas que se pueden hacer, pero el resto depende de ti desgraciado!
+
+---
+[//]: <> (44)
+
+class: inverse, center, middle
+
+# Gracias por aguantarme!
+
+Si tienen dudas pueden escribirme a: dante.tcg@gmail.com
+
+Las clases pueden encontrarlas en
+
+<https://danteca.github.io/>
+
+Chau!
+
+
+```{r, echo = F}
+knitr::include_graphics("libs/img/tenor.gif")
+```

@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+  <head>
+    <title>R Aplicado a la Meteorología - Básico</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Dante Castro Garro" />
+    <meta name="date" content="2019-06-15" />
+    <link href="libs/remark-css/default.css" rel="stylesheet" />
+    <link href="libs/remark-css/default-fonts.css" rel="stylesheet" />
+    <link href="libs/remark-css/hygge.css" rel="stylesheet" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# R Aplicado a la Meteorología - Básico
+## Clase 4 - Aplicaciones xvrs
+### Dante Castro Garro
+### 2019-06-15
+
+---
+
+[//]: &lt;&gt; (2)
+
+
+
+# Índice
+
+### Hoy aplicaremos las 3 clases pasadas para analizar un friaje. Para ello, desarrollarmos un código eficiente y que genere resultados de buena calidad. El análisis se dividirá en 3 partes.
+
+--
+
+1. Análisis de información de estaciones (tablas).
+
+--
+
+2. Análisis sinóptico (data grillada).
+
+--
+
+3. Cosillas adicionales.
+
+.tiny[*no se me van hasta que terminen malditos*]
+
+---
+
+layout: true
+
+### Parte I
+
+---
+[//]: &lt;&gt; (3)
+
+class: inverse, center, middle
+
+*Análisis de estaciones*
+
+---
+[//]: &lt;&gt; (4)
+
+Bueno, empecemos cargando la base de datos de las estaciones. Son dos archivos, uno contiene la información de precipitación, temperatura máxima y temperatura mínima; mientras que el otro contiene la metadata de las estaciones.
+
+
+```r
+*options(stringsAsFactors = F) # Para que no j0d@n los benditos factores
+
+dato = read.csv("Data/consolidado_total.csv")
+meta = read.csv("Data/metadata.csv")
+```
+
+---
+[//]: &lt;&gt; (5)
+
+Muy bien, con la data cargada, seleccionemos solo una estación y vemos su contenido. Eligiré la estación con el código 387 (una estación aleatoria).
+
+
+```r
+stn = dplyr::filter(dato, Codigo == 387)
+head(stn)
+```
+
+```
+##   Codigo    Nombre Anio Mes Dia Tmax Tmin Prec
+## 1    387 CONTAMANA 1987   1   1 32.2 21.5  0.0
+## 2    387 CONTAMANA 1987   1   2 32.2 21.0  0.0
+## 3    387 CONTAMANA 1987   1   3 31.4 21.8  5.0
+## 4    387 CONTAMANA 1987   1   4 31.5 22.0  5.8
+## 5    387 CONTAMANA 1987   1   5 33.4 21.0  0.0
+## 6    387 CONTAMANA 1987   1   6 30.4 23.0  0.0
+```
+
+---
+[//]: &lt;&gt; (6)
+
+Bien bien, ya que en esta clase nos enfocaremos en la parte gráfica, veamos el comportamiento de la temperatura mínima con [ggplot2!](https://ggplot2.tidyverse.org/reference/)
+
+
+```r
+library(cowplot) # o también con ggplot2
+
+serie = ggplot(stn, aes(y = Tmin, x = 1:nrow(stn))) +
+	geom_point()
+    
+plot(serie)
+```
+
+---
+[//]: &lt;&gt; (7)
+
+
+```
+## Warning: Removed 802 rows containing missing values (geom_point).
+```
+
+![](clase_4_files/figure-html/unnamed-chunk-4-1.png)&lt;!-- --&gt;
+
+---
+[//]: &lt;&gt; (8)
+
+Si queremos agregar o modificar cosas a la gráfica, lo hacemos colocando un "+" seguido de la función que deseemos. Provemos ahora con lineas azules y modificando el grillado.
+
+
+```r
+serie = ggplot(stn, aes(y = Tmin, x = 1:nrow(stn))) +
+	geom_line(colour = "dodgerblue") +
+	theme(panel.grid.major = element_line(colour = "grey85"))
+    
+plot(serie)
+```
+
+---
+[//]: &lt;&gt; (9)
+
+&lt;img src="clase_4_files/figure-html/unnamed-chunk-6-1.png" width="50%" /&gt;
+
+Prueben ustedes con otra variable u otra estación si quieren! Al final, el procedimiento será el mismo, pero tal vez tengan resultados distintos
+
+---
+[//]: &lt;&gt; (10)
+
+¿Y si queremos saber dónde carajos está la estación que elegimos? Con ggplot se puede hacer facilito noma!
+
+
+```r
+dep = sf::st_read("Data/Shapes/departamento_geo.shp", quiet = T)
+dep = sf::as_Spatial(dep)
+meta = mutate(meta, Sel = ifelse(Codigo == 387, "387", "No"))
+mapa = ggplot() +
+	geom_polygon(data = dep, aes(x = long, y = lat, group = group)) +
+	geom_point(data = meta, aes(x = Lon, y = Lat, colour = Sel))
+    
+plot(mapa)
+```
+
+---
+[//]: &lt;&gt; (11)
+
+
+```
+## Regions defined for each Polygons
+```
+
+![](clase_4_files/figure-html/unnamed-chunk-8-1.png)&lt;!-- --&gt;
+
+---
+[//]: &lt;&gt; (12)
+
+Ahora que ya tenemos nuestra estación, pasemos a buscar los friajes.
+
+--
+
+Hay diferentes formas, pero hagamos lo siguiente:
+
+--
+
+1. Determinemos la temperatura más baja de cada año.
+
+--
+
+2. Calculemos el promedio y desviación estándar de estos valores.
+
+--
+
+3. Usaremos la desviación estándar para determinar la intensidad de los eventos.
+
+--
+
+4. Buscaremos todos los días con temperatura menor a la media que calculamos, estos serán nuestros eventos.
+
+--
+
+5. Para este ejercicio, usaremos solo una fecha de friaje. Lo ideal sería analizar todos según su intensidad.
+
+--
+
+*¿Cómo lo harían?*
+
+&lt;img src="libs/img/khe.jpg" width="15%" /&gt;
+
+---
+[//]: &lt;&gt; (13)
+
+Paso 0
+
+Antes que nada, acomodemos un poco los datos. Generemos una conlumna con la fecha y otra adicional, pero algo rara. No se preocupen, lo usaremos más adelante.
+
+
+```r
+stn = mutate(stn,
+	Fecha = as.Date(paste(Anio,Mes,Dia, sep = "-")),
+	Juliano = as.Date(paste(1990,Mes,Dia, sep = "-"))
+	)
+```
+ 
+---
+[//]: &lt;&gt; (14)
+
+Paso 1
+
+Como tenemos que encontrar los valores mínimos en cada año, lo lógico sería agupar por años y luego usar la función `min()`.
+
+Debido a que en 1994 no hay datos y en el 2014 hay un valor bien raro, solo seleccionaré años entre 1995 y 2013.
+
+--
+
+
+```r
+stn = filter(stn, Anio %in% 1995:2013)
+stn_ano = group_by(stn, Anio)
+min_ano = summarize(stn_ano, Min = min(Tmin, na.rm = T))
+```
+
+---
+[//]: &lt;&gt; (15)
+
+Paso 2
+
+Ahora viene un promedio y desviación simple.
+
+--
+
+
+```r
+media = mean(min_ano$Min)
+desvi = sd(min_ano$Min)
+```
+
+---
+[//]: &lt;&gt; (16)
+
+Paso 3
+
+La desviación estándar podríamos usarlo para usar las categorias.
+
+--
+
+
+```r
+umb_mode = media - 0.5*desvi
+umb_inte = media - 1.0*desvi
+umb_mint = media - 1.5*desvi
+```
+
+---
+[//]: &lt;&gt; (17)
+
+Paso 4
+
+Ahora a encontrar los eventos. La mejor forma de verlos es con una gráfica! .small[ta que por fin]
+
+--
+
+
+```r
+stn = filter(stn, Mes %in% 5:9)
+
+con_leve = which(stn$Tmin &lt;= media &amp; stn$Tmin &gt; umb_mode)
+con_mode = which(stn$Tmin &lt;= umb_mode &amp; stn$Tmin &gt; umb_inte)
+con_inte = which(stn$Tmin &lt;= umb_inte &amp; stn$Tmin &gt; umb_mint)
+con_mint = which(stn$Tmin &lt;= umb_mint)
+
+stn$Categoria = NA
+stn$Categoria[con_leve] = "Leve"
+stn$Categoria[con_mode] = "Moderado"
+stn$Categoria[con_inte] = "Intenso"
+stn$Categoria[con_mint] = "Muy intenso"
+stn$Categoria = factor(
+	stn$Categoria, 
+	levels = c("Leve", "Moderado", "Intenso", "Muy intenso")
+)
+```
+
+.tiny[oe, y la gráfica?]
+
+---
+[//]: &lt;&gt; (18)
+
+Paso 4.1
+
+Ya ya, calmaaa .Large[!CALMA!]
+--
+, primero necesitabamos poner las categorías. Ahora si la gráfica, esta en específica se llama `heatmap`, ¿lo conoces?
+
+--
+
+
+```r
+library(cowplot)
+
+cols1 = c(
+	"Leve" = "skyblue", 
+	"Moderado" = "dodgerblue", 
+	"Intenso" = "darkviolet", 
+	"Muy intenso" = "deeppink"
+)
+
+hea = ggplot(stn, aes(x = Juliano, y = Anio, fill = Categoria)) +
+	geom_tile() +
+	scale_x_date(date_labels = "%b %d") +
+	scale_fill_manual(values = cols1) +
+	scale_y_reverse() +
+	labs(x = "", y = "Año") +
+	background_grid(major = "xy")
+
+plot(hea)
+```
+
+---
+[//]: &lt;&gt; (19)
+
+![](clase_4_files/figure-html/unnamed-chunk-16-1.png)&lt;!-- --&gt;
+
+---
+[//]: &lt;&gt; (20)
+
+Paso 5
+
+Ahora seleccionemos una fecha. Como mencioné , lo ideal sería trabajar con varias fechas, pero por ahora una es sufi. En mi caso será el 1999-08-17.
+
+--
+
+Junto al evento que seleccionemos, también seleccionaremos 7 días antes y 7 días despúes para ver como se desarrolla el evento.
+
+--
+
+
+```r
+a = as.Date("1999-08-17")
+evento = filter(stn, Fecha %in% (a-7):(a+7))
+ser = ggplot(evento, aes(x = Fecha, y = Tmin)) +
+	geom_line()
+
+plot(ser)
+```
+
+---
+[//]: &lt;&gt; (21)
+
+![](clase_4_files/figure-html/unnamed-chunk-18-1.png)&lt;!-- --&gt;
+
+---
+[//]: &lt;&gt; (22)
+layout: false
+class: inverse, center, middle
+
+### Parte II
+
+Análisis sinóptico
+
+---
+[//]: &lt;&gt; (23)
+
+class: inverse, center, middle
+
+### Usaremos el paquete [`metR`](https://eliocamp.github.io/metR/index.html)
+
+Hecho por mi papi, mi riqui, mi rey.
+
+*Elio Campitelli*
+
+&lt;img src="libs/img/elio.jpg" width="30%" /&gt;
+
+---
+
+layout:true
+
+### Parte II
+
+---
+[//]: &lt;&gt; (24)
+
+Ahora la idea es ver cómo se comportó la atmósfera, y lo haremos de la siguiente manera:
+
+--
+
+1. Buscar la fecha de nuestro evento.
+
+--
+
+2. Graficar el comportamiento del viento meridional para todas la fechas.
+
+--
+
+3. Pos... analizar no?
+
+&lt;img src="libs/img/derp.png" width="15%" /&gt;
+
+---
+[//]: &lt;&gt; (25)
+
+Paso 1
+
+Primero lo primero, seleccionar la data... algo que resultó engorroso la clase pasada cierto?
+--
+ Bueno, eso era importante para que entiendan qué es lo que se hace.
+ 
+Ahora, mi papi, mi ricky, mi rey, creó `metR` que hace esa chamba muuucho más sencilla.
+
+--
+
+
+```r
+library(metR)
+
+v = ReadNetCDF("Data/vwnd.1999.nc",
+	subset = list(
+		lon = 260:340, 
+		lat = -70:15, 
+		level = 250, 
+		time = as.POSIXct("1999-08-10"):as.POSIXct("1999-08-24")
+	)
+)
+v$lon = v$lon - 360
+```
+
+---
+[//]: &lt;&gt; (26)
+
+Una chequeada a la data
+
+
+```r
+print(v)
+```
+
+```
+##           lon lat level       vwnd       time
+##     1: -100.0  15   250 -3.0599976 1999-08-10
+##     2:  -97.5  15   250 -5.4899902 1999-08-10
+##     3:  -95.0  15   250 -5.8299866 1999-08-10
+##     4:  -92.5  15   250 -3.5699921 1999-08-10
+##     5:  -90.0  15   250 -0.3099976 1999-08-10
+##    ---                                       
+## 17321:  -30.0 -70   250  2.2200012 1999-08-24
+## 17322:  -27.5 -70   250  1.4000092 1999-08-24
+## 17323:  -25.0 -70   250  0.4500122 1999-08-24
+## 17324:  -22.5 -70   250 -0.6399994 1999-08-24
+## 17325:  -20.0 -70   250 -1.8599854 1999-08-24
+```
+
+---
+[//]: &lt;&gt; (27)
+
+Paso 2
+
+Ahora grafiquemos la data, ¿se acuerdan de "a"?
+
+
+```r
+vsub = dplyr::filter(v, time == a)
+sinop = ggplot(vsub, aes(lon, lat, z = vwnd)) +
+	geom_contour_fill() +
+	scale_fill_divergent() +
+	scale_x_longitude() +
+	scale_y_longitude() +
+	coord_fixed(xlim = c(-100, -20), ylim = c(-70, 5)) +
+	borders()
+
+plot(sinop)
+```
+
+---
+[//]: &lt;&gt; (28)
+
+![](clase_4_files/figure-html/unnamed-chunk-24-1.png)&lt;!-- --&gt;
+
+---
+[//]: &lt;&gt; (29)
+
+Paso 2.1
+
+Pero, se supone que son 15 días, ¿Cómo cha hacemos?
+
+--
+
+
+```r
+fec = as.Date( (a-7):(a+7), origin = "1970-01-01" )
+
+for(i in 1:length(fec)){
+
+	aer = fec[i]
+	
+	vsub = dplyr::filter(v, time == aer)
+	
+	sinop = ggplot(vsub, aes(lon, lat, z = vwnd)) +
+		geom_contour_fill() +
+		scale_fill_divergent() +
+		scale_x_longitude() +
+		scale_y_longitude() +
+		ggtitle(aer) +
+		coord_fixed(xlim = c(-100, -20), ylim = c(-70, 5)) +
+		borders() +
+		panel_border(colour = "black")
+
+	sal = paste0("vwnd_", aer, ".png")
+	ggsave(sal, plot = sinop)
+	
+}
+```
+
+---
+[//]: &lt;&gt; (30)
+
+Parte 3
+
+Ahora, analicemos que cha pasó.
+
+&lt;img src="libs/img/thinking_cup_guy.jpg" width="348" /&gt;
+
+---
+[//]: &lt;&gt; (31)
+
+layout: false
+class: inverse, center, middle
+
+## Veamos que otras cosas podemos hacer con el metR
+
+---
+[//]: &lt;&gt; (32)
+
+Veamos contornos encima de los colores.
+
+
+```r
+new = ggplot(vsub, aes(lon, lat, z = vwnd)) +
+	geom_contour_fill() +
+	geom_contour2(color = "black") +
+	geom_text_contour(stroke = 0.2) +
+	scale_fill_divergent() +
+	scale_x_longitude() +
+	scale_y_latitude() +
+	coord_fixed(xlim = c(-100, -20), ylim = c(-70, 5)) +
+	borders() +
+	panel_border(colour = "black")
+
+plot(new)
+```
+
+---
+[//]: &lt;&gt; (33)
+
+![](clase_4_files/figure-html/unnamed-chunk-28-1.png)&lt;!-- --&gt;
+
+---
+[//]: &lt;&gt; (34)
+
+Ahora los contornos de Tanaka!
+
+
+```r
+new = ggplot(vsub, aes(lon, lat, z = vwnd)) +
+	geom_contour_fill() +
+	geom_contour_tanaka() +
+	scale_fill_divergent() +
+	scale_x_longitude() +
+	scale_y_latitude() +
+	coord_fixed(xlim = c(-100, -20), ylim = c(-70, 5)) +
+	borders() +
+	panel_border(colour = "black")
+
+plot(new)
+```
+
+---
+[//]: &lt;&gt; (35)
+
+![](clase_4_files/figure-html/unnamed-chunk-30-1.png)&lt;!-- --&gt;
+
+---
+[//]: &lt;&gt; (36)
+
+Bueno, veamos vectores ahora. Primero calcularemos la velocidad resultante para complementar mejor las gráficas.
+
+
+```r
+source("Data/Meteorite_dev.r")
+
+u = ReadNetCDF("Data/uwnd.1999.nc",
+	subset = list(
+		lon = 260:340, 
+		lat = -70:15, 
+		level = 250, 
+		time = as.POSIXct("1999-08-10"):as.POSIXct("1999-08-24")
+	)
+)
+u$lon = u$lon - 360
+
+uv = u
+uv$vwnd = v$vwnd
+uv$vel = magx(u$uwnd, v$vwnd)
+
+uv = dplyr::filter(uv, time == a)
+```
+
+---
+[//]: &lt;&gt; (37)
+
+Ya, grafiquemos vectores!
+
+
+```r
+library(RColorBrewer)
+
+new = ggplot(uv, aes(lon, lat)) +
+	geom_contour_fill(aes(z = vel)) +
+	geom_vector(aes(dx = uwnd, dy = vwnd)) +
+	scale_fill_gradientn(colors = brewer.pal(8, "YlGn")) +
+	scale_mag() +
+	scale_x_longitude(ticks = 30) +
+	scale_y_latitude(ticks = 30) +
+	coord_fixed(xlim = c(-100, -20), ylim = c(-70, 5)) +
+	borders() +
+	panel_border(colour = "black")
+
+plot(new)
+```
+
+---
+[//]: &lt;&gt; (38)
+
+![](clase_4_files/figure-html/unnamed-chunk-33-1.png)&lt;!-- --&gt;
+
+---
+[//]: &lt;&gt; (39)
+
+También se puede líneas de corriente .small[ya fue el GrADS]
+
+
+```r
+library(RColorBrewer)
+
+new = ggplot(uv, aes(lon, lat)) +
+	geom_contour_fill(aes(z = vel)) +
+	geom_streamline(
+		aes(dx = uwnd, dy = vwnd), 
+		L = 12, 
+		res = 5, 
+		arrow.length = 0.3) +
+	scale_fill_gradientn(colors = brewer.pal(8, "YlGn")) +
+	scale_mag() +
+	scale_x_longitude() +
+	scale_y_latitude() +
+	coord_fixed(xlim = c(-100, -20), ylim = c(-70, 5)) +
+	borders() +
+	panel_border(colour = "black")
+
+plot(new)
+```
+
+---
+[//]: &lt;&gt; (40)
+
+![](clase_4_files/figure-html/unnamed-chunk-35-1.png)&lt;!-- --&gt;
+
+---
+[//]: &lt;&gt; (41)
+
+Ahora un poco más pro
+
+
+```r
+library(viridis)
+
+new = ggplot(uv, aes(lon, lat)) +
+	geom_streamline(
+		aes(
+			dx = uwnd, 
+			dy = vwnd, 
+			size = ..step..,
+			alpha = ..step..,
+			color = sqrt(..dx..^2 + ..dy..^2)),
+		L = 10, res = 2, arrow = NULL, lineend = "round") +
+	labs(color = "m/s") +
+	scale_color_viridis() +
+	scale_x_longitude() +
+	scale_y_latitude() +
+	scale_size(range = c(0,1), guide = "none") +
+	scale_alpha(guide = "none") +
+	coord_fixed(xlim = c(-100, -20), ylim = c(-70, 5)) +
+	borders() +
+	panel_border(colour = "black")
+
+plot(new)
+```
+
+---
+[//]: &lt;&gt; (42)
+
+![](clase_4_files/figure-html/unnamed-chunk-37-1.png)&lt;!-- --&gt;
+
+---
+[//]: &lt;&gt; (43)
+
+class: center, middle
+
+## Y bueno, hay más cosas que se pueden hacer, pero el resto depende de ti desgraciado!
+
+---
+[//]: &lt;&gt; (44)
+
+class: inverse, center, middle
+
+# Gracias por aguantarme!
+
+Si tienen dudas pueden escribirme a: dante.tcg@gmail.com
+
+Las clases pueden encontrarlas en
+
+&lt;https://danteca.github.io/&gt;
+
+Chau!
+
+
+![](libs/img/tenor.gif)&lt;!-- --&gt;
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"countIncrementalSlides": false,
+"highlightLines": true
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();</script>
+
+<script>
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
