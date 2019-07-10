@@ -1,0 +1,496 @@
+---
+title: "Análisis de series de tiempo"
+subtitle: "Clase 1 - Conceptos y análisis básico"
+author: "Dante Castro Garro"
+date: "2019-06-22"
+output: 
+  xaringan::moon_reader:
+    css: ["default", "default-fonts", "hygge", "my_theme.css"]
+    lib_dir: libs
+    nature:
+      highlightStyle: github
+      countIncrementalSlides: false
+      highlightLines: true
+---
+[//]: <> (2)
+
+```{r setup, include = FALSE}
+options(htmltools.dir.version = FALSE, stringsAsFactors = FALSE)
+library(cowplot)
+library(dplyr)
+library(reshape2)
+
+
+medmov = function(x, n){
+
+	res = rep(NA, length(x))
+	
+	for( i in (n+1):(length(x)-n) ){
+	
+		res[i] = mean( x[(i-n):(i+n)] )
+	
+	}
+	
+	return(res)
+
+}
+
+```
+
+# Metodolgía de trabajo
+
+Las 3 primeras horas serán de contenido teórico y algunos ejemplos, las horas restantes serán de análisis en parejas (o si hay un huérfano por ahí, lo adoptan peee)
+
+---
+[//]: <> (3)
+
+# Contenido
+
+### Hoy daremos con conceptos básicos relacionados a series de tiempo y prepararnos para lo que viene en las siguientes clases
+
+--
+
+1. Series de tiempo.
+
+--
+
+2. Descomposición de series de tiempo.
+
+---
+[//]: <> (4)
+
+class: inverse, center, middle
+background-image: url("img/aurora.jpg")
+background-size: cover
+
+# Series de tiempo
+
+---
+[//]: <> (5)
+
+### Ahora, ¿que cha es una serie de tiempo?
+
+![cup](https://i.kym-cdn.com/photos/images/newsfeed/000/603/810/f57.jpg)
+
+---
+[//]: <> (6)
+
+### Veamos que dice nuestro causa .tiny[*insertar nombre aquí*]
+
+[![IMAGE](http://img.youtube.com/vi/JU53KmbmEIM/0.jpg)](http://www.youtube.com/watch?v=JU53KmbmEIM)
+
+---
+[//]: <> (7)
+
+
+class: center, middle
+
+### Volviendo al tema principal y antes que el pata nos venda su curso
+
+### ¿y esto cómo lo aplicamos a nuestros intereses?
+
+---
+[//]: <> (8)
+
+# Series de tiempo
+
+- Modelo extructurado de representación de datos.
+
+- Evolución a lo largo del tiempo.
+
+- Factores que estén relacionados a la evolución de una o más variables.
+
+---
+[//]: <> (9)
+
+## Veamos unos ejemplos
+
+A continuación tenemos una serie tiempo de la precipitación mensual en la estación de Contamana, ¿qué podemos comentar de ella?
+
+--
+
+```{r, echo = F, eval = T}
+stn = read.csv("data/stn_387.csv") %>%
+	group_by(Anio, Mes) %>%
+	summarize(Prec = sum(Prec, na.rm = T)) %>%
+	as.data.frame()
+```
+
+```{r, eval = T, echo = F}
+head(stn, n = 20)
+```
+
+---
+[//]: <> (10)
+
+![pendex](img/pendejo.jpg)
+
+--
+
+oe, pero ta bien ps, eso es una serie de tiempo, que cha pasa ah?
+
+--
+
+...
+
+ya ya, a ustedes les gusta todo masticado no?
+
+---
+[//]: <> (11)
+
+¿Ahora qué tal? ¿Qué pueden analizar?
+
+.tiny[llorones]
+
+```{r, echo = F}
+stn = mutate(stn, Fecha = as.Date(paste(Anio, Mes, 15, sep = "-")))
+g1 = ggplot(stn, aes(Fecha, Prec)) +
+	geom_bar(stat = "identity", fill = "forestgreen")
+plot(g1)
+```
+
+---
+[//]: <> (12)
+
+Aquí les va otro ejemplo. En este caso es la temperatura superficial mensual del mar y su anomalía en la región Niño 3.4 entre 1960 y 2018.
+
+```{r, include = F}
+nino = read.table("data/nina34.data.txt", header = F, na.string = "-99.99")
+colnames(nino) = c(
+	"Anio", "M01", "M02", "M03", "M04", "M05", "M06", 
+	"M07"	, "M08", "M09", "M10", "M11", "M12")
+nino = nino %>%
+	melt(
+		id.vars = "Anio",
+		variable.name = "Mes",
+		value.name = "TSM"
+	) %>%
+	arrange(Anio, Mes) %>%
+	mutate(
+		Mes = as.integer(substr(Mes, 2, 3)),
+		TSM = medmov(TSM, 1)
+	) %>%
+	filter(Anio %in% 1950:2018)
+
+# Calculo del climatología
+nino_clim = nino %>%
+	filter(Anio %in% 1981:2010) %>%
+	group_by(Mes) %>%
+	summarize(Clim = mean(TSM, na.rm = T))
+	
+# Calculo de anomalía
+nyear = max(nino$Anio) - min(nino$Anio) + 1
+nino = nino %>%
+	mutate(
+		Fecha = as.Date(paste(Anio, Mes, 15, sep = "-"), format = "%Y-%m-%d"),
+		Clim = rep(nino_clim$Clim, times = nyear), 
+		Anom = TSM - Clim
+	)
+```
+
+```{r, echo = F, warning = F}
+nino_gra = nino %>%
+	select(Fecha, TSM, Anom) %>%
+	melt(
+		id.vars = "Fecha",
+		variable.name = "Variable",
+		value.name = "Temperatura"
+	)
+
+# Gráfico de faceta
+g2 = ggplot(nino_gra, aes(x = Fecha, y = Temperatura)) +
+	geom_line(colour = "orangered") +
+	facet_grid(Variable ~ ., scales = "free_y") +
+	background_grid(major = "xy", colour.major = "grey85") 
+plot(g2)
+```
+
+---
+[//]: <> (13)
+
+### Ahora, ¿qué características pueden mencionar de una serie de tiempo?
+
+Mencionen algunos datos con los que puedan describir una serie de tiempo.
+
+--
+
+Yo les propongo los siguientes:
+
+- Media
+
+- Varianza (también puede ser desviación estándar)
+
+- Asimetría (*skewness*)
+
+- Tendencia
+
+- Periodicidad
+
+- Ruido
+
+---
+[//]: <> (14)
+
+### Vamos por lo simple primero
+
+¿Cuánto será la media, varianza y asimetría de la primera gráfica?
+
+```{r, echo = F, fig.height = 3}
+plot(g1)
+```
+
+--
+
+```{r, echo = F}
+med = mean(stn$Prec, na.rm = T)
+var = sd(stn$Prec, na.rm = T)^2
+skw = e1071::skewness(stn$Prec, na.rm = T)
+cat(paste("Media:", med, "\n"))
+cat(paste("Varianza:", var, "\n"))
+cat(paste("Asimetria:", skw, "\n"))
+```
+
+---
+[//]: <> (15)
+
+### Ahora veamos la tendencia
+
+¿Pero cómo cha lo calculamos?
+
+¿Opiniones?
+
+--
+
+- Regresión lineal.
+
+- Media móvil
+
+---
+[//]: <> (16)
+
+### Con regresión lineal
+
+```{r, echo = F, warning = F}
+reg = lm(TSM ~ as.integer(Fecha), data = nino)
+ten_reg = ggplot(nino, aes(Fecha, TSM)) +
+	geom_point() +
+	geom_smooth(method = lm) +
+	annotate(
+		"text", 
+		x = as.Date("2005-01-15"), 
+		y = 24.3, 
+		label = paste0(reg$coefficients[2]*365,"\u00b0C/año")) +
+	background_grid(major = "xy")
+plot(ten_reg)
+```
+
+---
+[//]: <> (17)
+
+### Con media móvil
+
+Oe, ¿pero cómo lo calculo?
+
+--
+
+.tiny[*insertar formula que no me sale :v*]
+
+A `i` se le conoce como el ventaneo (o grado) y es el que determina con cuántos elementos se va a promediar en un punto específico.
+
+--
+
+```{r, echo = F, warning = F, fig.height = 5}
+nino_ten = mutate(nino, TSM = medmov(TSM,30)) 
+
+ten_mov = ggplot(nino_ten, aes (x = Fecha, y = TSM)) +
+	geom_line(colour = "orangered", size = 1) +
+	annotate(
+		"text", 
+		x = as.Date("2005-01-15"), 
+		y = 24.3, 
+		label = "i = 30") +
+	background_grid(major = "xy")
+plot(ten_mov)
+```
+
+---
+[//]: <> (18)
+
+### Y bueno... hay otros métodos
+
+```{r, echo = F, warning = F, message = F}
+ggplot(nino, aes(Fecha, TSM)) +
+	geom_point() +
+	geom_smooth() +
+	background_grid(major = "xy")
+```
+
+---
+[//]: <> (19)
+
+class: inverse, center, middle
+background-image: url("img/broken-glass_1.jpg")
+background-size: cover
+
+.pull-right[
+# Descomposición de series de tiempo
+
+Aquí veremos lo demás
+]
+
+---
+[//]: <> (20)
+
+### Descomposición de series de tiempo
+
+Toda serie de tiempo se dice que está conformado por una componente de tendencia y luego valores aleatorios (ruído). En algunos casos (como en muchas de las variables geofísicas) puede tener un comportamiento estacional (periodicidad).
+
+--
+
+La forma en cómo estos componentes están asociados puede ser determinado por un modelo aditivo o multiplicativo.
+
+*Serie = Tend. + Estac. + Ruido   |   Serie = Tend. x Estac. x Ruido*
+
+--
+
+Lo que haremos ahora será separar estos 3 comportamientos. Por temas prácticos veremos solo el modelo aditivo para la precipitación de Contamana.
+
+---
+[//]: <> (21)
+
+## Primer paso: Componente de tendencia
+
+En este caso es mejor usar el de medias móviles, pero ¿por qué creen?
+
+--
+
+Ahora, las medias móviles requieren una rango de datos para el promedio, ¿qué rango utilizaremos?
+
+--
+
+Se recomienda que se utilice un ventaneo igual al periodo del comportamiento estacional.
+
+--
+
+En la siguientes clases entenderán cómo determinar este periodo de ventaneo utilizando series de Fourier.
+
+---
+[//]: <> (22)
+
+Aquí tenemos la media móvil.
+
+```{r, echo = F, warning = F}
+stn = mutate(stn, Prec_mov = medmov(Prec, 6))
+stn = mutate(stn, Prec_est = Prec - Prec_mov)
+g1 + geom_line(data = stn, aes(x = Fecha, y = Prec_mov), colour = "dodgerblue", size = 4)
+```
+
+---
+[//]: <> (23)
+
+Al retirarla de la serie, se aprecia claramente el comportamiento estacional.
+
+```{r, echo = F, warning = F}
+ggplot(stn, aes(Fecha, Prec_est)) +
+	geom_line(colour = "forestgreen") 
+```
+
+--
+
+o bueno, masomenos, hay mucha data :v
+
+---
+[//]: <> (24)
+
+## Segundo paso: Componente estacional
+
+Calcular la componente estacional es, en esencia, sacar una climatología (o promedio a una determinada frecuencia) a la data sin tendencia.
+
+--
+
+```{r, echo = F, warning = F}
+stn_cli = stn %>%
+	group_by(Mes) %>%
+	summarize(Clim = mean(Prec_est, na.rm = T))
+stn$Prec_clim = rep(stn_cli$Clim, length.out = nrow(stn))
+ggplot(stn, aes(Fecha, Prec_clim)) +
+	geom_line(colour = "forestgreen")
+```
+
+---
+[//]: <> (25)
+
+## Tercer paso: Componente ruído
+
+Por último, para obtener el ruído volvemos al metodo aditivo. De ahí podemos deducir que es la data original, menos la tendencia y la estacionalidad.
+
+--
+
+```{r, echo = F, warning = F}
+stn = mutate(stn, Prec_rui = Prec - Prec_mov - Prec_clim)
+ggplot(stn, aes(Fecha, Prec_rui)) +
+	geom_line(colour = "forestgreen")
+```
+
+---
+[//]: <> (26)
+
+.pull-left[
+```{r, echo = F, warning = F, fig.height = 12.5}
+stn_wide = filter(stn, Anio %in% 2000:2010)
+stn_wide = melt(stn_wide, id.vars = c("Anio","Mes","Fecha"), variable.name = "Componente", value.name = "mm")
+ggplot(stn_wide, aes(x = Fecha, y = mm)) +
+	geom_line(colour = "forestgreen") +
+	facet_grid(Componente ~ ., scales = "free_y") 
+```
+]
+
+--
+
+.pull-right[
+![perico](img/thinking_parrot.jpg)
+
+¿Qué podemos analizar?
+]
+
+---
+[//]: <> (27)
+
+class: middle
+
+Ahora queda pendiente identificación de *breakpoints* y autocorrelaciones. Con eso podemos pasar a Fourier.
+
+--
+
+...no se preocupen, eso lo veremos la siguiente clase.
+
+---
+[//]: <> (28)
+
+class: inverse, middle, center
+
+Bueno, no quiero asustarlos más así que pasaemos a practicar en grupo. Su chamba ahora es buscar una estación de SENAMHI y otra variable adicional cualquiera. Analicen sus características y descompongan las series de tiempo.
+
+--
+
+Trabajarán con estas series en resto de las clases, así que elijan datos interesantes para su trabajo final. Si .Large[FINAL!]
+
+---
+[//]: <> (29)
+
+class: inverse, center, middle
+
+# Gracias por aguantarme!
+
+Si tienen dudas pueden escribirme a: dante.tcg@gmail.com
+
+Las clases pueden encontrarlas en
+
+<https://danteca.github.io/>
+
+Chau!
+
+```{r, echo = F, out.width = "40%"}
+knitr::include_graphics("img/nice_duck.jpg")
+```
+
