@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+  <head>
+    <title>Análisis de series de tiempo</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Dante Castro Garro" />
+    <meta name="date" content="2019-07-20" />
+    <link href="libs/remark-css/default.css" rel="stylesheet" />
+    <link href="libs/remark-css/default-fonts.css" rel="stylesheet" />
+    <link href="libs/remark-css/hygge.css" rel="stylesheet" />
+    <link rel="stylesheet" href="my_theme.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# Análisis de series de tiempo
+## Clase 4 - Wavelet
+### Dante Castro Garro
+### 2019-07-20
+
+---
+
+[//]: &lt;&gt; (2)
+
+
+
+# Recapitulando
+
+Hasta el momento hemos visto:
+
+- Características generales
+
+- Descomposición de series de tiempo
+ 
+- Autocorrelación
+ 
+- Identificación de *changepoints*
+ 
+- Series de Fourier
+
+- Transformada de Fourier
+
+--
+
+Para que quede claro, lo mostraré con un ejemplo. De paso que concluyo la clase pasada que quedó a medias. .tiny[sorry :'v]
+
+---
+[//]: &lt;&gt; (3)
+
+class: middle, left
+
+# Recapitulaishon
+
+### Con la steishon de Pilluana-shion
+
+---
+[//]: &lt;&gt; (4)
+
+## Características generales de la serie de tiempo
+
+La serie, media y desviación estándar
+
+
+```
+## Media: 80.1544918699187
+```
+
+```
+## Desviación: 49.11579
+```
+
+![](clase_4_files/figure-html/unnamed-chunk-2-1.png)&lt;!-- --&gt;
+
+---
+[//]: &lt;&gt; (5)
+
+## Descomposición de la serie de tiempo
+
+![](clase_4_files/figure-html/unnamed-chunk-3-1.png)&lt;!-- --&gt;
+
+---
+[//]: &lt;&gt; (6)
+
+## Autoregresión
+
+![](clase_4_files/figure-html/unnamed-chunk-4-1.png)&lt;!-- --&gt;
+
+---
+[//]: &lt;&gt; (7)
+
+## *Break points*
+
+
+
+
+```
+## [1] NA
+```
+
+--
+
+Pos no hay... yeeeey
+
+---
+[//]: &lt;&gt; (8)
+
+## Análisis espectral
+
+
+```
+## Armonicos: 41 y 82
+```
+
+```
+## Frecuenca de armónico: 12 y 6 meses
+```
+
+![](clase_4_files/figure-html/unnamed-chunk-6-1.png)&lt;!-- --&gt;
+
+---
+[//]: &lt;&gt; (9)
+
+class:: inverse, center
+
+
+# Wavelet
+
+![wave](img/mother.png)
+
+.bottom[### o en español *ondículas*]
+
+---
+[//]: &lt;&gt; (10)
+
+### Primero que nada, es necesario responder estas preguntas existenciales
+
+--
+
+- ¿Qué es una serie estacional?
+
+- ¿Qué es una serie estacionaria?
+
+---
+[//]: &lt;&gt; (11)
+
+### Las limitantes de Fourier
+
+Como lo mencioné la clase anterior, aplicar Fourier tiene algunas limitaciones.
+
+La principal (y la que suele ocurrir) es que los datos usados no son estacionarios en el tiempo. Esto significa que los patrones estacionales que podamos encontrar (a escala anual por ejemplo) desaparezcan en un periodo determinado o pasen a otra frecuencia (por ejemplo bienal).
+
+---
+[//]: &lt;&gt; (12)
+
+### Una gráfica de ejemplo
+
+![nop](img/nop.png)
+
+---
+[//]: &lt;&gt; (13)
+
+### ¿En qué se diferencia Fourier de Wavelet?
+
+En realidad son muy parecidos. La transformada de Fourier convierte una serie tiempo en valores de frecuencia. 
+--
+La transformada (continua) de Wavelet hace la misma cosa, convierte el tiempo en frecuencia, peeeeero mantiene la dimensión del tiempo.
+
+--
+
+En otras palabras...
+
+- Transformada de Fourier: Tiempo `\(\to\)` Frecuencia
+
+- Transformada de Wavelet: Tiempo `\(\to\)` Frecuencia + Tiempo
+
+---
+[//]: &lt;&gt; (14)
+
+## Ahora, no todo es color de rosa...
+
+¿Recuerdan el Principio de Heisenberg?
+
+--
+
+![heisen](img/heisen/heisen.gif)
+
+---
+[//]: &lt;&gt; (15)
+
+Bueno, con Wavelet ocurre algo parecido.
+
+Resulta que no puedes conocer la frecuencia con la que oscila una data sin perder especifidad en el tiempo, y viceversa.
+
+--
+
+Esto genera que puedas usar Wavelet para tener una mejor representación de las frecuencias, pero sacrificando su ubicación en el tiempo, o puedas ubicar bien el el tiempo el comportamiento oscilatorio, pero sacrificando la precisión de la frecuencia a la que oscila.
+
+--
+
+Si lo miras de cierta forma, la transformada de Fourier te da la frecuenia exacta pero sacrificando por completo el tiempo, es el caso extremo.
+
+---
+[//]: &lt;&gt; (16)
+
+## ¿Cómo funciona?
+
+Partamos de la transformada Fourier. En esencia tenemos una ecuación que convierte nuestro tiempos en frecuencia. Esta ecuación representa ondas sinusoidales de diferentes tamaños dependiendo de la frencuencia.
+
+### Función madre
+
+`$$f(t) = A \times \sin (hwt + \rho)$$`
+
+### Funciones hijas (transformada)
+
+`$$X_k = \sum_{n=0}^{N-1} x_n e^{-i.2\pi k n/N}$$`
+
+---
+[//]: &lt;&gt; (17)
+
+En Wavelet también es lo mismo. Tenemos una función que convierte el tiempo en frecuencia y tiempo.
+
+### Función madre de Morlet
+
+`$$\psi(t) = \pi ^ {-1/4} e ^ {i \omega t} e ^ {t^2/2}$$`
+
+### Ondas hijas
+
+`$$Wave(\tau, s) = \sum_{t} x_t \frac{1}{\sqrt s} \psi ^ \star \left(\frac{t - \tau}{s}\right)$$`
+
+El detalle es que la transformada de Wavelet tiene tiempo `\(t\)`, frecuencia `\(\omega\)`, pero crea un nuevo tiempo `\(\tau\)` y una nueva frecuencia `\(s\)`.
+
+---
+[//]: &lt;&gt; (18)
+
+### Oh fuck profe! Stoooop!
+
+Ya ya.
+
+En conclusión, Wavelet te permite ubicar en el tiempo y frecuencia un determinado comportamiento y analizar sus variaciones. Sin embargo, ya que no es específico en ninguno de los dos, solo te da una idea el comportamiento. La transformada de Fourier te da la frecuencia exacta, pero bajo algunos supuestos.
+
+---
+[//]: &lt;&gt; (19)
+
+### Profe, grafiquitas nomás, la teoría es más densa que el quaker que tomé esta mañana
+
+Ya ya. El Wavelet de la estacion Pilluana
+
+
+
+![](clase_4_files/figure-html/unnamed-chunk-8-1.png)&lt;!-- --&gt;
+
+---
+[//]: &lt;&gt; (20)
+
+### ¿Qué tenemos?
+
+--
+
+- Comportamiento periódico a un periodo de 0.5 (6 meses). Parece darse en todo momento, aunque se pierde ligeramente entre 1990 y 2000.
+
+- Comportamiento periódico de menor intensidad anual (periodo 1, 12 meses),, pero solo entre 1980 - 1990 y 2005 - 2015.
+
+- A escalas más altas parece no haber patrones.
+
+- A frecuencias más altas parece existir algún patrón, pero puede ser ruido. Necesitamos usar una wavelet que represente mejor las escalas pequeñas o hacer un zoom en esas altas frecuencias.
+
+- Alta frencuencia es igual a baja escala y viceversa por cierto :v.
+
+---
+[//]: &lt;&gt; (22)
+
+class: inverse, center, middle
+
+# Gracias por aguantarme!
+
+Si tienen dudas pueden escribirme a: dante.tcg@gmail.com
+
+Las clases pueden encontrarlas en
+
+&lt;https://danteca.github.io/&gt;
+
+Son libreeeees
+
+![:scale 35%](img/exam.jpg)
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script src="macros.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"countIncrementalSlides": false,
+"highlightLines": true
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();</script>
+
+<script>
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>

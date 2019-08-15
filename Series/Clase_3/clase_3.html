@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+  <head>
+    <title>Análisis de series de tiempo</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Dante Castro Garro" />
+    <meta name="date" content="2019-07-13" />
+    <link href="libs/remark-css/default.css" rel="stylesheet" />
+    <link href="libs/remark-css/default-fonts.css" rel="stylesheet" />
+    <link href="libs/remark-css/hygge.css" rel="stylesheet" />
+    <link rel="stylesheet" href="my_theme.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# Análisis de series de tiempo
+## Clase 3 - Series y transformadas de Fourier
+### Dante Castro Garro
+### 2019-07-13
+
+---
+
+[//]: &lt;&gt; (2)
+
+
+
+# Recapitulando
+
+Hasta el momento hemos visto:
+
+ - Características generales
+
+ - Descomposición de series de tiempo
+ 
+ - Autocorrelación
+ 
+ - Identificación de *changepoints*
+ 
+ - Una probadita de las frecuencias
+ 
+Si bien no veremos estos conceptos directamente, nos ayudarán a entender mejor el contexto en el cual podemos usar Fourier
+
+---
+[//]: &lt;&gt; (3)
+
+# Clase de hoy
+
+Ahora nos metemos con la matemática. Si bien solo veremos 2 temas, pueden ser difíciles de entender.
+
+- Series de Fourier
+ 
+- Transformada de Fourier
+
+- Análisis armónico
+
+Disfruten la clase malditos!
+
+.tiny[Pd. A medida que vean la presentación notarán una reducción en la calidad y cantidad del contenido hasta el punto que me llegó al chompiras y les puse videos para cerrar la presentación con "estilo". ]
+
+---
+[//]: &lt;&gt; (4)
+
+class: middle, left
+background-image: url("img/fourier.jpg")
+background-size: cover
+
+# El papi Fourier y sus series.
+
+---
+[//]: &lt;&gt; (5)
+
+## Series de Fourier
+
+El fundamento de las series de Fourier es sencillo y se le conoce como .bold[Ondas Complejas] (no confundir con números complejos...todavía).
+
+--
+
+En esencia, una Onda Compleja es la suma de dos o más ondas sinusoidales sobre una misma trayectoria (por ejemplo, sobre un mismo periodo de tiempo).
+
+--
+
+![](clase_3_files/figure-html/unnamed-chunk-1-1.png)&lt;!-- --&gt;
+---
+[//]: &lt;&gt; (6)
+
+## Series de Fourier
+
+Entonces, si queremos representar *cualquier* comportamiento ondulatorio, lo podemos hacer en base a sumas de `\(senos\)` (o `\(cosenos\)` también). A esta suma se le conoce como las .bold[Series de Fourier].
+
+--
+
+Ahora, hay unas pequeñas condiciones que cumplir.
+
+- El sistema a analizar debe ser "lineal". Incorporar algo que no tenga que ver con `\(senos\)` romperá la linealidad.
+
+- Las series solo funcionan si se tiene un comportamiento periódico.
+
+--
+ 
+![](clase_3_files/figure-html/unnamed-chunk-2-1.png)&lt;!-- --&gt;
+
+---
+[//]: &lt;&gt; (7)
+
+## Series de Fourier
+
+### Algunos conceptos
+
+- .bold[Periodo fundamental:] Es el periodo de tiempo entre la primera y última muestra.
+
+--
+
+- .bold[Ratio de muestreo:] Es el numero de muestras tomadas en un periodo de tiempo (también llamado *frecuencia de adquisición*).
+
+--
+
+- .bold[Intervalo de muestra:] Simplemente es el periodo fundamental entre el número de muestras.
+
+--
+
+- .bold[Frecuencia fundamental:] ( `\(f_0\)` ) Es la frecuencia en que se repite el patrón principal. Todas las demas ondas que se encuentren en un patrón son multiplos de la frecuencia fundamental. A este grupo de múltiplos se les conoce como los .bold[armónicos].
+
+---
+[//]: &lt;&gt; (8)
+
+## Series de Fourier
+
+Volvamos al primer ejemplo e identifiquemos los conceptos.
+
+![](clase_3_files/figure-html/unnamed-chunk-3-1.png)&lt;!-- --&gt;
+
+La ecuación de la última onda no será más que la suma de las dos anteriores. Se podría expresas de esta forma...
+
+`$$f(t)=0.5\times \sin(2wt)+0.25\times \sin(5wt)$$`
+
+---
+[//]: &lt;&gt; (9)
+
+## Series de Fourier
+
+¿Cómo podemos interpretar esta fórmula?
+
+`$$f(t)=0.5\times \sin(2wt)+0.25\times \sin(5wt)$$`
+
+--
+
+- `\(w\)` es la frecuencia angular en radianes/segundo y se expresa como `\(w=2\pi f_0\)`. Si recuerdan, los enteros que multiplican a `\(f_0\)` se les conoce como los armónicos, por lo que la primera onda es el 3er armónico y la segunda onda el 5to armónico.
+
+--
+
+- Los valores que multiplican a las ondas (0.5 y 0.25) son la amplitud que tiene cada onda. En otras palabras, la intensidad o "importancia" de cada armónico.
+
+---
+[//]: &lt;&gt; (10)
+
+## Series de Fourier
+
+### Cambios de fase
+
+Hasta el momento hemos visto ondas que empiezan en un mismo punto (aunque se que ni cuenta se han dado). Bueno, podemos modificar esto si adicionamos un desfase.
+
+Para ello tendremos que agregar un valor en radianes.
+
+---
+[//]: &lt;&gt; (11)
+
+Por ejemplo, desfasemos en `\(\frac{\pi}{2}\)` la primera onda.
+
+`$$f(t)=0.5\times \sin(2wt+\frac{\pi}{2})+0.25\times \sin(5wt)$$`
+
+--
+
+![](clase_3_files/figure-html/unnamed-chunk-4-1.png)&lt;!-- --&gt;
+![](clase_3_files/figure-html/unnamed-chunk-5-1.png)&lt;!-- --&gt;
+
+---
+[//]: &lt;&gt; (12)
+
+## Series de Fourier
+
+### *DC Componentes* (?)
+
+El caso anterior (desfase) vimos cómo podemos mover las ondas en el eje x, pero también podemos hacerlo con eje y! Facilito noma!
+
+...solo es sumarle o restarle a la ecuación general...
+
+---
+[//]: &lt;&gt; (13)
+
+Si movemos la onda en 1 unidad en el eje y tendríamos.
+
+`$$f(t)=1+0.5\times \sin(2wt+\frac{\pi}{2})+0.25\times \sin(5wt)$$`
+
+--
+
+![](clase_3_files/figure-html/unnamed-chunk-6-1.png)&lt;!-- --&gt;
+![](clase_3_files/figure-html/unnamed-chunk-7-1.png)&lt;!-- --&gt;
+
+---
+[//]: &lt;&gt; (14)
+
+## Series de Fourier
+
+Bueno, ya cubrimos las característias generales de las series de Fourier, es momento de ver la ecuación general, la expresión .bold[madre] de donde sale todo este .bold[desmadre].
+
+--
+
+`$$f(t) = a_0 + \sum_k  a_k \times sin(kwt + \rho_k)$$`
+
+*¿Identifican todo lo que hemos visto?*
+
+---
+[//]: &lt;&gt; (15)
+
+class: inverse, center, middle
+
+# Bueno salgan a jugar un rato
+
+Continuamos en 15 min
+
+---
+[//]: &lt;&gt; (16)
+
+class: center, top
+background-image: url("img/transformada.jpg")
+
+
+# La Transformada de Fourier
+
+---
+
+layout: true
+
+## La Transformada de Fourier (TF)
+
+---
+[//]: &lt;&gt; (17)
+
+Como mencioné casi al principio, las series de Fourier se aplican a ondas periódicas. La Transformada de Fourier es la generalización del procedimiento para poder analizar ondas no periódicas.
+
+--
+
+La TF ve todas las trayectorias como un conjunto de movimientos circulares (esto es importante!).
+
+--
+
+Data una trayectoria, TF lo descompone en un conjunto de ciclos, con los cuales se puede volver a construir la trayectoria original (parecido a la series de Fourier).
+
+---
+[//]: &lt;&gt; (18)
+
+Las trayecotrias son procesadas en base a filtros.
+
+- Cada filtro da un ciclo y el resto de la trayecotria.
+
+- Los filtros son independiente ya que miran un componente difernte de la trayectoria.
+
+- Se pueden aplicar los filtros hasta que ya no quede trayectoria.
+
+--
+
+Existen dos algoritmos para tratar TF
+
+- La Transformada de Fourier Discreta (el calladito que rinde como el conejo de Duracell).
+
+- La Transformada de Fourier Rápida (el que acaba al toque pero te quita las ganas al menos).
+
+---
+[//]: &lt;&gt; (19)
+
+### Números complejos
+
+![anus](img/anus.jpg)
+
+---
+### Números complejos
+
+[//]: &lt;&gt; (19.5)
+
+![aer](img/gaussscheebene.gif)
+
+
+Revisen este [link](http://www.math-kit.de/en/2003/content/CN-PB-XML-EN/rep//Manifest257/gauss.html) para lo básíco de números complejos.
+
+---
+[//]: &lt;&gt; (20)
+
+"*ya ya profe, tu grafica muy bonita y todo, pero ¿para qué es necesario los número complejos? A parte de complicarnos la vida claro*"
+
+--
+
+Bueno, todo tiene su explicación en, tal vez, la fórmula más hermosa de las matemáticas (en serio, googleenlo si quieren).
+
+--
+
+`$$e^{\pi i} + 1 = 0$$`
+
+--
+
+¿Qué significa la fórmula de Euler en este caso?
+
+Significa que una rotación de 180 grados ( `\(\pi\)` radianes), el punto donde se ubicará en el eje x será de -1 (lado opuesto al inicio del círculo)
+
+---
+[//]: &lt;&gt; (21)
+
+Un videoito para que me entiendas y lo veas más claro que tu futuro.
+
+[![IMAGE](https://i.ytimg.com/vi/v0YEaeIClKY/hqdefault.jpg)](https://www.youtube.com/watch?v=v0YEaeIClKY)
+
+---
+[//]: &lt;&gt; (22)
+
+Bueno, volviendo a la TF, trata de representar la trayectoria en base a ciclos circulares (un punto que se mueve en circulos). Estos ciclos tienen 3 características.
+
+- Cuán rápido se mueve el punto en el círculo.
+
+- Cuán grande es el círculo en el que gira el punto.
+
+- Desde dónde empieza a girar el punto en el círculo.
+
+---
+[//]: &lt;&gt; (23)
+
+Pongamos un ejemplo.
+
+Asumamos que tenemos una serie de 4 puntos (1,2,3,4), todos separados por el mismo intervalo de tiempo (1 segundo por ejemplo) y queremos usar la TF para determinar una ecuación en el que, solo ingresando el tiempo, nos pueda dar los 4 puntos.
+
+--
+
+Pues tendríamos
+
+
+```r
+fft(1:4)/4
+```
+
+```
+## [1]  2.5+0.0i -0.5+0.5i -0.5+0.0i -0.5-0.5i
+```
+
+---
+[//]: &lt;&gt; (24)
+
+Podríamos verlo de esta forma tambien.
+
+&lt;table&gt;
+ &lt;thead&gt;
+  &lt;tr&gt;
+   &lt;th style="text-align:right;"&gt; cycle &lt;/th&gt;
+   &lt;th style="text-align:right;"&gt; freq &lt;/th&gt;
+   &lt;th style="text-align:right;"&gt; strength &lt;/th&gt;
+   &lt;th style="text-align:right;"&gt; delay &lt;/th&gt;
+  &lt;/tr&gt;
+ &lt;/thead&gt;
+&lt;tbody&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 0 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.00 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.5000 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 1 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.25 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.7071 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 135 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 2 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.50 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.5000 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 180 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 3 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.75 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.7071 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; -135 &lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+
+--
+
+¿y la velocidad?
+
+--
+
+Esos son los ciclos, que están expresados en la base al tiempo total (ciclos cada  4 segundos)
+
+---
+[//]: &lt;&gt; (25)
+
+### Las ecuaciones
+
+`$$X_k = \sum_{n=0}^{N-1} x_n e^{-i.2\pi k n/N}$$`
+
+--
+
+Lo que hace la TF es convertir una onda en el dominio del tiempo al dominio de la frecuencias. 
+
+--
+
+Existe un conjunto de ondas sinusoidales que sumadas dan la onda original. Cada una de estas ondas sinusoidales tienen su amplitud y frecuencia.
+
+--
+
+Si ploteamos la frecuencia vs la amplitud de cada onda, obtendremos el famoso .bold[Espectro de frecuencias]. Esta gráfica nos indicará cuál de las frecuencias es la más predominante en la onda original.
+
+---
+[//]: &lt;&gt; (26)
+
+layout: false
+
+## Transformada Inversa de Fourier (TI)
+
+`$$x_n = \frac{1}{N} \sum_{k=0}^{N-1} X_k e^{i.2\pi k n /N}$$`
+
+--
+
+En esencia es lo contrario a la TF, donde del dominio de las frecuencias pasas al dominio del tiempo. El único detalle es que arroja un resultado interpolado.
+
+--
+
+Y ya está, mo hay mucha más magia que eso :v
+
+---
+[//]: &lt;&gt; (27)
+
+Hagamos una prueba con la serie 1, 2, 3 y 4.
+
+![](clase_3_files/figure-html/unnamed-chunk-10-1.png)&lt;!-- --&gt;
+
+---
+[//]: &lt;&gt; (28)
+
+Tener en cuenta que los resultados pueden tener un montoooooon de armónicos, pero no necesariamente son útiles, la mayoría son puro ruído.
+
+---
+[//]: &lt;&gt; (29)
+
+### Espectro de Frecuencias
+
+Bueno, les tendré que explicar así nomás porque no me dio tiempo de prearar la expliación, así que no me ignoren y anoten zanganazos.
+
+![](clase_3_files/figure-html/unnamed-chunk-11-1.png)&lt;!-- --&gt;
+
+---
+[//]: &lt;&gt; (30)
+
+## Y para cerrar... música... casi...
+
+.tiny[otra vez...]
+
+Bueno, otra vez les voy a poner a los españoles escandalosos, pero hacen un buena explicación de las ondas y cómo entra nuestro causa Fourier en todo esto.
+
+[![IMAGE](https://i.ytimg.com/vi/xcHbm0vXFFE/hqdefault.jpg)](https://www.youtube.com/watch?v=xcHbm0vXFFE&amp;t=631s)
+
+---
+[//]: &lt;&gt; (31)
+
+## Y algo más!
+
+Este otro video si quieres profundizar más en el tema. Está en *English* pero tiene subtítulos en español.
+
+[![IMAGE](https://i.ytimg.com/vi/r6sGWTCMz2k/hqdefault.jpg)](https://www.youtube.com/watch?v=r6sGWTCMz2k&amp;t=291s)
+
+---
+[//]: &lt;&gt; (32)
+
+class: inverse, center, middle
+
+# Gracias por aguantarme!
+
+Si tienen dudas pueden escribirme a: dante.tcg@gmail.com
+
+Las clases pueden encontrarlas en
+
+&lt;https://danteca.github.io/&gt;
+
+A las justas acabe
+
+![:scale 30%](img/tired.jpeg)
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script src="macros.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"countIncrementalSlides": false,
+"highlightLines": true
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();</script>
+
+<script>
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
